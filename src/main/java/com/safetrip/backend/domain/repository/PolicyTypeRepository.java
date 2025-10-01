@@ -13,5 +13,7 @@ public interface PolicyTypeRepository {
 
     List<PolicyType> findAll();
 
+    Optional<PolicyType> findByName(String name);
+
     void deleteById(Long id);
 }

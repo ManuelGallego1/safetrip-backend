@@ -1,6 +1,7 @@
 package com.safetrip.backend.infrastructure.persistence.entity;
 
 import com.safetrip.backend.domain.model.Discount;
+import com.safetrip.backend.domain.model.enums.DiscountType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,7 +31,7 @@ public class DiscountEntity {
     private String name;
 
     @Column(name = "type", nullable = false, length = 50)
-    private String type; // 'percentage' or 'fixed'
+    private DiscountType type; // 'percentage' or 'fixed'
 
     @Column(name = "value", nullable = false, precision = 18, scale = 4)
     private BigDecimal value;

@@ -1,8 +1,6 @@
 package com.safetrip.backend.domain.model;
 
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
 
 public class User {
 
@@ -71,4 +69,19 @@ public class User {
     public ZonedDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public User activate() {
+        return new User(
+                this.userId,
+                this.person,
+                this.email,
+                this.phone,
+                this.passwordHash,
+                this.role,
+                true,
+                this.createdAt,
+                ZonedDateTime.now()
+        );
+    }
+
 }

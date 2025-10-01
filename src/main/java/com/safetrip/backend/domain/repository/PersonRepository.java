@@ -1,6 +1,7 @@
 package com.safetrip.backend.domain.repository;
 
 import com.safetrip.backend.domain.model.Person;
+import com.safetrip.backend.domain.model.enums.DocumentType;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,7 +12,7 @@ public interface PersonRepository {
 
     Optional<Person> findById(Long id);
 
-    Optional<Person> findByDocument(String documentType, String documentNumber);
+    Optional<Person> findByDocument(DocumentType documentType, String documentNumber);
 
     List<Person> findAll();
 

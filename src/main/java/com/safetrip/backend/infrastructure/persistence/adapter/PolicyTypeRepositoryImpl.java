@@ -41,6 +41,11 @@ public class PolicyTypeRepositoryImpl implements PolicyTypeRepository {
     }
 
     @Override
+    public Optional<PolicyType> findByName(String name) {
+        return policyTypeJpaRepository.findByName(name);
+    }
+
+    @Override
     public void deleteById(Long id) {
         policyTypeJpaRepository.deleteById(id);
     }

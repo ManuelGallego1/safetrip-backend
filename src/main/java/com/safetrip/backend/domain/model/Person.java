@@ -1,13 +1,14 @@
 package com.safetrip.backend.domain.model;
 
+import com.safetrip.backend.domain.model.enums.DocumentType;
+
 import java.time.ZonedDateTime;
-import java.util.List;
 
 public class Person {
 
     private final Long personId;
     private final String fullName;
-    private final String documentType;
+    private final DocumentType documentType;
     private final String documentNumber;
     private final String address;
     private final ZonedDateTime createdAt;
@@ -15,7 +16,7 @@ public class Person {
 
     public Person(Long personId,
                   String fullName,
-                  String documentType,
+                  DocumentType documentType,
                   String documentNumber,
                   String address,
                   ZonedDateTime createdAt,
@@ -38,7 +39,7 @@ public class Person {
         return fullName;
     }
 
-    public String getDocumentType() {
+    public DocumentType getDocumentType() {
         return documentType;
     }
 

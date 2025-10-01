@@ -1,6 +1,7 @@
 package com.safetrip.backend.infrastructure.persistence.adapter;
 
 import com.safetrip.backend.domain.model.Person;
+import com.safetrip.backend.domain.model.enums.DocumentType;
 import com.safetrip.backend.domain.repository.PersonRepository;
 import com.safetrip.backend.infrastructure.persistence.entity.PersonEntity;
 import com.safetrip.backend.infrastructure.persistence.mapper.PersonMapper;
@@ -33,7 +34,7 @@ public class PersonRepositoryImpl implements PersonRepository {
     }
 
     @Override
-    public Optional<Person> findByDocument(String documentType, String documentNumber) {
+    public Optional<Person> findByDocument(DocumentType documentType, String documentNumber) {
         return personJpaRepository.findByDocumentTypeAndDocumentNumber(documentType, documentNumber)
                 .map(PersonMapper::toDomain);
     }

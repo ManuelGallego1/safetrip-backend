@@ -1,4 +1,5 @@
-package com.safetrip.backend.application.service;
+package com.safetrip.backend.domain.service;
 
-public class TemplateProvider {
+public interface TemplateProvider {
+    String getOtpTemplate(String otp);
 }

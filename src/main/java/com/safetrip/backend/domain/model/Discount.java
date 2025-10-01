@@ -1,18 +1,20 @@
 package com.safetrip.backend.domain.model;
 
+import com.safetrip.backend.domain.model.enums.DiscountType;
+
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 public class Discount {
     private final Long discountId;
     private final String name;
-    private final String type;
+    private final DiscountType type;
     private final BigDecimal value;
     private final Boolean active;
     private final ZonedDateTime createdAt;
     private final ZonedDateTime updatedAt;
 
-    public Discount(Long discountId, String name, String type, BigDecimal value, Boolean active,  ZonedDateTime createdAt, ZonedDateTime updatedAt) {
+    public Discount(Long discountId, String name, DiscountType type, BigDecimal value, Boolean active, ZonedDateTime createdAt, ZonedDateTime updatedAt) {
         this.discountId = discountId;
         this.name = name;
         this.type = type;
@@ -24,7 +26,7 @@ public class Discount {
 
     public Long getDiscountId() { return discountId; }
     public String getName() { return name; }
-    public String getType() { return type; }
+    public DiscountType getType() { return type; }
     public BigDecimal getValue() { return value; }
     public Boolean getActive() { return active; }
     public ZonedDateTime getCreatedAt() { return createdAt; }

@@ -1,5 +1,6 @@
 package com.safetrip.backend.infrastructure.persistence.entity;
 
+import com.safetrip.backend.domain.model.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,7 +33,7 @@ public class PaymentEntity {
     private PaymentTypeEntity paymentType;
 
     @Column(name = "status", nullable = false, length = 80)
-    private String status; // 'pending', 'completed', 'failed'
+    private PaymentStatus status; // 'pending', 'completed', 'failed'
 
     @Column(name = "transaction_id", length = 250)
     private String transactionId;

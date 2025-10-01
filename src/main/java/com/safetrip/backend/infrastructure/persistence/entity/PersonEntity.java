@@ -1,5 +1,6 @@
 package com.safetrip.backend.infrastructure.persistence.entity;
 
+import com.safetrip.backend.domain.model.enums.DocumentType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,8 +30,9 @@ public class PersonEntity {
     @Column(name = "full_name", nullable = false, length = 250)
     private String fullName;
 
-    @Column(name = "document_type", nullable = false, length = 50)
-    private String documentType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "document_type", nullable = false, length = 10)
+    private DocumentType documentType;
 
     @Column(name = "document_number", nullable = false, length = 100)
     private String documentNumber;
@@ -72,8 +74,6 @@ public class PersonEntity {
                 .documentType(person.getDocumentType())
                 .documentNumber(person.getDocumentNumber())
                 .address(person.getAddress())
-                .createdAt(person.getCreatedAt())
-                .updatedAt(person.getUpdatedAt())
                 .build();
     }
 }

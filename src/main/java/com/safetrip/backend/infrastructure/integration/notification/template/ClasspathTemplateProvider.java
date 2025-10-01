@@ -1,4 +1,4 @@
-package com.safetrip.backend.infrastructure.integration.notification.mailtrap;
+package com.safetrip.backend.infrastructure.integration.notification.template;
 
 import com.safetrip.backend.domain.service.TemplateProvider;
 import org.springframework.core.io.ClassPathResource;

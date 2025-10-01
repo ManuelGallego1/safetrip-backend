@@ -1,4 +1,4 @@
-package com.safetrip.backend.application.service;
+package com.safetrip.backend.domain.service;
 
 import com.safetrip.backend.application.dto.NotificationDTO;
 

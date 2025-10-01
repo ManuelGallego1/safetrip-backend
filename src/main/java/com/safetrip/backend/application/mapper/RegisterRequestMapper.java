@@ -14,12 +14,12 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.ZonedDateTime;
 
 @Component
-public class RegisterMapper {
+public class RegisterRequestMapper {
 
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public RegisterMapper(RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public RegisterRequestMapper(RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -27,10 +27,10 @@ public class RegisterMapper {
     public User toDomain(RegisterRequest dto) {
         Person person = new Person(
                 null,
-                dto.getFullName(),
-                dto.getDocumentType(),
-                dto.getDocumentNumber(),
-                dto.getAddress(),
+                dto.getPerson().getFullName(),
+                dto.getPerson().getDocumentType(),
+                dto.getPerson().getDocumentNumber(),
+                dto.getPerson().getAddress(),
                 ZonedDateTime.now(),
                 ZonedDateTime.now()
         );
@@ -44,7 +44,7 @@ public class RegisterMapper {
                 dto.getPhone(),
                 passwordEncoder.encode(dto.getPassword()),
                 role,
-                true,
+                false,
                 ZonedDateTime.now(),
                 ZonedDateTime.now()
         );

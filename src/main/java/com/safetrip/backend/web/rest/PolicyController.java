@@ -1,4 +1,7 @@
 package com.safetrip.backend.web.rest;
 
-public class PolicyController {
-}
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/policies")
+public class PolicyController {}

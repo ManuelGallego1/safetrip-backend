@@ -1,14 +1,14 @@
 package com.safetrip.backend.domain.model.enums;
 
-public enum RoleType {
+public enum RoleName {
     ADMIN("ADMIN"),
-    SOPORTE("SOPORTE"),
-    CLIENTE("CLIENTE"),
-    ASESOR("ASESOR");
+    SUPPORT("SUPPORT"),
+    CUSTOMER("CUSTOMER"),
+    ADVISOR("ADVISOR");
 
     private final String value;
 
-    RoleType(String value) {
+    RoleName(String value) {
         this.value = value;
     }
 
@@ -16,8 +16,8 @@ public enum RoleType {
         return value;
     }
 
-    public static RoleType fromValue(String value) {
-        for (RoleType type : RoleType.values()) {
+    public static RoleName fromValue(String value) {
+        for (RoleName type : RoleName.values()) {
             if (type.value.equalsIgnoreCase(value)) {
                 return type;
             }

@@ -1,4 +1,4 @@
-package com.safetrip.backend.infrastructure.integration.notification;
+package com.safetrip.backend.infrastructure.integration.notification.mailtrap;
 
 import com.safetrip.backend.application.dto.NotificationDTO;
 import com.safetrip.backend.domain.service.NotificationService;

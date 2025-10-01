@@ -1,4 +1,4 @@
-package com.safetrip.backend.infrastructure.integration.whatsapp;
+package com.safetrip.backend.infrastructure.integration.notification.whatsapp;
 
 import com.safetrip.backend.domain.service.WhatsAppService;
 import org.springframework.beans.factory.annotation.Value;
