@@ -19,8 +19,8 @@ public class VerifyOtpUseCase {
         this.jwtService = jwtService;
     }
 
-    public String execute(String email, String otp) {
-        User user = userRepository.findByEmail(email)
+    public String execute(String phone, String otp) {
+        User user = userRepository.findByPhone(phone)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         boolean valid = otpService.verifyOtp(user, otp);
@@ -31,6 +31,6 @@ public class VerifyOtpUseCase {
         User activatedUser = user.activate();
         userRepository.save(activatedUser);
 
-        return jwtService.generateToken(user.getEmail());
+        return jwtService.generateToken(user.getPhone());
     }
 }

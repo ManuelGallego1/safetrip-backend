@@ -1,4 +1,4 @@
-package com.safetrip.backend.infrastructure.integration.zurich.dto;
+package com.safetrip.backend.infrastructure.integration.zurich.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

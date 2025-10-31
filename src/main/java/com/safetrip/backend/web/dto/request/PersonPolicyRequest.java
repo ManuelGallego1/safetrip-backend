@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class PersonPolicy {
+public class PersonPolicyRequest {
     private String fullName;
     private DocumentType documentType;
     private String documentNumber;

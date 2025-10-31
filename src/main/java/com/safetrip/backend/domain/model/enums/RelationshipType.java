@@ -1,8 +1,8 @@
 package com.safetrip.backend.domain.model.enums;
 
 public enum RelationshipType {
-    HOLDER("Holder"),
-    BENEFICIARY("Beneficiary");
+    HOLDER("HOLDER"),
+    BENEFICIARY("BENEFICIARY");
     private final String value;
 
     RelationshipType(String value) {

@@ -30,6 +30,9 @@ public class ProcessEntity {
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @Column (name = "value", nullable = false)
+    private String value;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private ZonedDateTime createdAt;

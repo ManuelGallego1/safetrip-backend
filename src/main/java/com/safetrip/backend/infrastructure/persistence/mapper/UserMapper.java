@@ -17,7 +17,8 @@ public class UserMapper {
                 entity.getRole().toDomain(),
                 entity.getIsActive(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getUpdatedAt(),
+                entity.getProfileImageUrl()
         );
     }
 
@@ -32,6 +33,7 @@ public class UserMapper {
                 .isActive(domain.getIsActive())
                 .createdAt(domain.getCreatedAt())
                 .updatedAt(domain.getUpdatedAt())
+                .profileImageUrl(domain.getProfileImageUrl())
                 .build();
     }
 }

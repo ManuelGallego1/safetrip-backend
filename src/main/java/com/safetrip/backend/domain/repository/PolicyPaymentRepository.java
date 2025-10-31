@@ -1,5 +1,6 @@
 package com.safetrip.backend.domain.repository;
 
+import com.safetrip.backend.domain.model.Payment;
 import com.safetrip.backend.domain.model.PolicyPayment;
 
 import java.util.List;
@@ -10,6 +11,8 @@ public interface PolicyPaymentRepository {
     PolicyPayment save(PolicyPayment policyPayment);
 
     Optional<PolicyPayment> findById(Long policyPaymentId);
+
+    Optional<PolicyPayment> findByPayment(Payment payment);
 
     List<PolicyPayment> findAll();
 

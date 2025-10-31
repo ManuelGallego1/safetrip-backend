@@ -14,7 +14,10 @@ public class WalletMapper {
                 UserMapper.toDomain(entity.getUser()),
                 entity.getTotal(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getUpdatedAt(),
+                entity.getStartDate(),
+                entity.getEndDate(),
+                entity.getTransactionId()
         );
     }
 
@@ -28,6 +31,9 @@ public class WalletMapper {
         entity.setTotal(domain.getTotal());
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());
+        entity.setStartDate(domain.getStartDate());
+        entity.setEndDate(domain.getEndDate());
+        entity.setTransactionId(domain.getTransactionId());
         return entity;
     }
 }

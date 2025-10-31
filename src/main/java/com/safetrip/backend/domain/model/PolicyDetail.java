@@ -69,4 +69,25 @@ public class PolicyDetail {
     public ZonedDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public static PolicyDetail of(
+            Policy policy,
+            String origin,
+            String destination,
+            ZonedDateTime departure,
+            ZonedDateTime arrival,
+            String notes
+    ) {
+        return new PolicyDetail(
+                null,
+                policy,
+                origin,
+                destination,
+                departure,
+                arrival,
+                notes,
+                ZonedDateTime.now(),
+                ZonedDateTime.now()
+        );
+    }
 }

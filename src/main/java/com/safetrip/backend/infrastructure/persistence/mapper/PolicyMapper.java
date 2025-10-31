@@ -1,37 +1,23 @@
 package com.safetrip.backend.infrastructure.persistence.mapper;
 
-import com.safetrip.backend.domain.model.*;
-import com.safetrip.backend.infrastructure.persistence.entity.*;
+import com.safetrip.backend.domain.model.Policy;
+import com.safetrip.backend.infrastructure.persistence.entity.PolicyEntity;
 
+import java.util.Collections;
 import java.util.stream.Collectors;
 
-public class PolicyMapper {
+/**
+ * Mapper responsible for converting between Policy domain models and Policy JPA entities.
+ */
+public final class PolicyMapper {
 
-    public static Policy toDomain(PolicyEntity entity) {
-        if (entity == null) return null;
-
-        return new Policy(
-                entity.getPolicyId(),
-                PolicyTypeMapper.toDomain(entity.getPolicyType()),
-                entity.getPersonCount(),
-                entity.getUnitPriceWithDiscount(),
-                DiscountMapper.toDomain(entity.getDiscount()),
-                entity.getPolicyNumber(),
-                UserMapper.toDomain(entity.getCreatedByUser()),
-                entity.getCreatedAt(),
-                entity.getUpdatedAt(),
-                entity.getPolicyDetails() != null
-                        ? entity.getPolicyDetails().stream()
-                        .map(PolicyDetailMapper::toDomain)
-                        .collect(Collectors.toList())
-                        : null,
-                entity.getPolicyPayments() != null
-                        ? entity.getPolicyPayments().stream()
-                        .map(PolicyPaymentMapper::toDomain)
-                        .collect(Collectors.toList())
-                        : null
-        );
+    private PolicyMapper() {
+        // Prevent instantiation
     }
+
+    // ------------------------------------------------------------
+    // DOMAIN → ENTITY
+    // ------------------------------------------------------------
 
     public static PolicyEntity toEntity(Policy domain) {
         if (domain == null) return null;
@@ -46,6 +32,48 @@ public class PolicyMapper {
         entity.setCreatedByUser(UserMapper.toEntity(domain.getCreatedByUser()));
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());
+        entity.setCreatedWithFile(domain.getCreatedWithFile());
+
+        if (domain.getPolicyDetails() != null && !domain.getPolicyDetails().isEmpty()) {
+            entity.setPolicyDetails(
+                    domain.getPolicyDetails().stream()
+                            .map(PolicyDetailMapper::toEntity)
+                            .collect(Collectors.toList())
+            );
+        }
+
+        if (domain.getPolicyPayments() != null && !domain.getPolicyPayments().isEmpty()) {
+            entity.setPolicyPayments(
+                    domain.getPolicyPayments().stream()
+                            .map(PolicyPaymentMapper::toEntity)
+                            .collect(Collectors.toList())
+            );
+        }
+
         return entity;
+    }
+
+    // ------------------------------------------------------------
+    // ENTITY → DOMAIN
+    // ------------------------------------------------------------
+
+    public static Policy toDomain(PolicyEntity entity) {
+        if (entity == null) return null;
+
+        return new Policy(
+                entity.getPolicyId(),
+                PolicyTypeMapper.toDomain(entity.getPolicyType()),
+                entity.getPersonCount(),
+                entity.getUnitPriceWithDiscount(),
+                DiscountMapper.toDomain(entity.getDiscount()),
+                entity.getPolicyNumber(),
+                UserMapper.toDomain(entity.getCreatedByUser()),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt(),
+                entity.getCreatedWithFile(),
+                // This prevents StackOverflowError from bidirectional relationships
+                Collections.emptyList(),  // policyDetails
+                Collections.emptyList()   // policyPayments
+        );
     }
 }

@@ -1,4 +1,4 @@
-package com.safetrip.backend.infrastructure.integration.zurich.dto;
+package com.safetrip.backend.infrastructure.integration.zurich.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

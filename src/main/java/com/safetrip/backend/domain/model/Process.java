@@ -7,6 +7,7 @@ public class Process {
     private final Long processId;
     private final Parameter parameter;
     private final String description;
+    private final String value;
     private final ZonedDateTime createdAt;
     private final ZonedDateTime updatedAt;
 
@@ -14,12 +15,14 @@ public class Process {
                    Parameter parameter,
                    String description,
                    ZonedDateTime createdAt,
-                   ZonedDateTime updatedAt) {
+                   ZonedDateTime updatedAt,
+                   String value) {
         this.processId = processId;
         this.parameter = parameter;
         this.description = description;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.value = value;
     }
 
     public Long getProcessId() {
@@ -40,5 +43,9 @@ public class Process {
 
     public ZonedDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getValue() {
+        return value;
     }
 }

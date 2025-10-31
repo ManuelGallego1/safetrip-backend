@@ -15,6 +15,9 @@ public class Policy {
     private final User createdByUser;
     private final ZonedDateTime createdAt;
     private final ZonedDateTime updatedAt;
+    private final Boolean createdWithFile;
+    private final List<PolicyDetail>  policyDetails;
+    private final List<PolicyPayment> policyPayments;
 
     public Policy(Long policyId,
                   PolicyType policyType,
@@ -25,6 +28,7 @@ public class Policy {
                   User createdByUser,
                   ZonedDateTime createdAt,
                   ZonedDateTime updatedAt,
+                  Boolean createdWithFile,
                   List<PolicyDetail> policyDetails,
                   List<PolicyPayment> policyPayments) {
         this.policyId = policyId;
@@ -36,6 +40,24 @@ public class Policy {
         this.createdByUser = createdByUser;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.createdWithFile = createdWithFile;
+        this.policyDetails = policyDetails;
+        this.policyPayments = policyPayments;
+    }
+
+    public Policy(Long policyId) {
+        this.policyId = policyId;
+        this.policyType = null;
+        this.personCount = null;
+        this.unitPriceWithDiscount = null;
+        this.discount = null;
+        this.policyNumber = null;
+        this.createdByUser = null;
+        this.createdAt = null;
+        this.updatedAt = null;
+        this.createdWithFile = null;
+        this.policyDetails = null;
+        this.policyPayments = null;
     }
 
     public Long getPolicyId() {
@@ -73,4 +95,13 @@ public class Policy {
     public ZonedDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public Boolean getCreatedWithFile() {
+        return createdWithFile;
+    }
+
+    public List<PolicyDetail> getPolicyDetails() { return policyDetails; }
+
+    public List<PolicyPayment> getPolicyPayments() { return policyPayments; }
+
 }

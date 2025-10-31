@@ -28,11 +28,11 @@ public class SendOtpUseCase {
 
         whatsAppService.sendOTP(user.getPhone(), otp.getCode());
 
-        NotificationDTO notification = new NotificationDTO(
+        /*NotificationDTO notification = new NotificationDTO(
                 user.getEmail(),
                 "Tu código de verificación es: " + otp.getCode(),
                 "Código OTP - Safetrip"
         );
-        notificationService.send(notification);
+        notificationService.send(notification);*/
     }
 }

@@ -1,8 +1,8 @@
 package com.safetrip.backend.domain.model.enums;
 
 public enum DiscountType {
-    PERCENTAGE("percentage"),
-    FIXED("fixed");
+    PERCENTAGE("PERCENTAGE"),
+    FIXED("FIXED");
 
     private final String value;
 

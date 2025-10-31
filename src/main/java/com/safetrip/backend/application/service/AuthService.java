@@ -11,4 +11,5 @@ public interface AuthService {
     LoginResponse verifyOtp(LoginOtpRequest loginRequest);
     User registerUser(RegisterRequest registerRequest);
     String sendOtp(String phoneNumber);
+    LoginResponse getUserInfo(User user);
 }

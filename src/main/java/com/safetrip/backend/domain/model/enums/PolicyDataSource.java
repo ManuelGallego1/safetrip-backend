@@ -1,4 +1,17 @@
 package com.safetrip.backend.domain.model.enums;
 
-public class PolicyDataSource {
+public enum PolicyDataSource {
+    MANUAL("Manual"),
+    EXCEL("Excel"),
+    IMAGE("Imagen");
+
+    private final String displayName;
+
+    PolicyDataSource(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
 }

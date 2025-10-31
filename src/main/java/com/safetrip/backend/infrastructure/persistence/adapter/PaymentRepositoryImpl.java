@@ -1,12 +1,14 @@
 package com.safetrip.backend.infrastructure.persistence.adapter;
 
 import com.safetrip.backend.domain.model.Payment;
+import com.safetrip.backend.domain.model.enums.PaymentStatus;
 import com.safetrip.backend.domain.repository.PaymentRepository;
 import com.safetrip.backend.infrastructure.persistence.entity.PaymentEntity;
 import com.safetrip.backend.infrastructure.persistence.mapper.PaymentMapper;
 import com.safetrip.backend.infrastructure.persistence.repository.PaymentJpaRepository;
 import org.springframework.stereotype.Component;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,5 +51,10 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     public Optional<Payment> findByTransactionId(String transactionId) {
         return paymentJpaRepository.findByTransactionId(transactionId)
                 .map(PaymentMapper::toDomain);
+    }
+
+    @Override
+    public int updateStatus(Long paymentId, PaymentStatus status, ZonedDateTime updatedAt) {
+        return paymentJpaRepository.updatePaymentStatus(paymentId, status, updatedAt);
     }
 }

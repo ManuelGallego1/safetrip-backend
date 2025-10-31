@@ -1,14 +1,16 @@
-package com.safetrip.backend.infrastructure.integration.zurich.dto;
+package com.safetrip.backend.infrastructure.integration.zurich.dto.request;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 @Data
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class AddOrderPaymentRequest {
-    private List<PassengerInfoDTO> infoPasajeros;
-    private BigDecimal costo;
+    private List<PassengerRequest> infoPasajeros;
+    private double costo;
     private LocalDate fechaSalida;
     private LocalDate fechaLlegada;
     private String referencia;
@@ -22,6 +24,6 @@ public class AddOrderPaymentRequest {
     private Integer plan;
     private Integer paisDestino;
     private Integer paisOrigen;
-    private BigDecimal tasaCambio;
+    private Integer tasaCambio;
     private List<Object> upgrades;
 }

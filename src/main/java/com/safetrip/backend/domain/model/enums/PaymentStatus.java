@@ -1,9 +1,9 @@
 package com.safetrip.backend.domain.model.enums;
 
 public enum PaymentStatus {
-    PENDING("pending"),
-    COMPLETED("completed"),
-    FAILED("failed");
+    PENDING("PENDING"),
+    COMPLETED("COMPLETED"),
+    FAILED("FAILED");
 
     private final String value;
 

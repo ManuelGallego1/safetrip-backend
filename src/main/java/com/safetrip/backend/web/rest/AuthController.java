@@ -1,6 +1,7 @@
 package com.safetrip.backend.web.rest;
 
-import com.safetrip.backend.application.mapper.RegisterResponseMapper;
+import com.safetrip.backend.application.exception.InvalidCredentialsException;
+import com.safetrip.backend.web.dto.mapper.RegisterResponseMapper;
 import com.safetrip.backend.application.service.impl.AuthServiceImpl;
 import com.safetrip.backend.domain.model.User;
 import com.safetrip.backend.web.dto.request.LoginOtpRequest;
@@ -11,6 +12,9 @@ import com.safetrip.backend.web.dto.request.LoginRequest;
 import com.safetrip.backend.web.dto.response.LoginResponse;
 import com.safetrip.backend.web.dto.response.RegisterResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -48,4 +52,6 @@ public class AuthController {
         String message = authService.sendOtp(request.getPhone());
         return ResponseEntity.ok(ApiResponse.success("OTP sent successfully", message));
     }
+
+
 }

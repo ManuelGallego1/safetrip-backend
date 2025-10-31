@@ -1,4 +1,4 @@
-package com.safetrip.backend.application.mapper;
+package com.safetrip.backend.web.dto.mapper;
 
 import com.safetrip.backend.domain.model.User;
 import com.safetrip.backend.web.dto.response.LoginResponse;
@@ -11,10 +11,12 @@ public class LoginResponseMapper {
 
     public static LoginResponse toDto(User user, String token) {
         RegisterResponse registerResponse = new RegisterResponse(
-                user.getUserId(),
                 user.getPerson().getFullName(),
+                user.getPerson().getDocumentNumber(),
+                user.getPerson().getDocumentType(),
                 user.getEmail(),
                 user.getPhone(),
+                user.getPerson().getAddress(),
                 user.getRole().getName()
         );
 

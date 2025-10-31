@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.safetrip.backend.application.exception.*;
 
+import java.io.IOException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -28,9 +30,28 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage(), 403));
     }
 
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<ApiResponse<Integer>> handleIOException(IOException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Error de entrada/salida: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Integer>> handleGeneric(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Internal server error", 500));
     }
+
+    @ExceptionHandler(ParameterNotFoundException.class)
+    public ResponseEntity<ApiResponse<Integer>> handleParameterNotFound(ParameterNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage(), 404));
+    }
+
+    @ExceptionHandler(ProcessNotFoundException.class)
+    public ResponseEntity<ApiResponse<Integer>> handleProcessNotFound(ProcessNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage(), 404));
+    }
+
 }

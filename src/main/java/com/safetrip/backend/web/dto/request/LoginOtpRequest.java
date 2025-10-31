@@ -6,5 +6,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class LoginOtpRequest {
     String otp;
-    String email;
+    String phone;
 }

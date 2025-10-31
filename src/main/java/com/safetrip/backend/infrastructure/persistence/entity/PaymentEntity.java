@@ -33,7 +33,8 @@ public class PaymentEntity {
     private PaymentTypeEntity paymentType;
 
     @Column(name = "status", nullable = false, length = 80)
-    private PaymentStatus status; // 'pending', 'completed', 'failed'
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus status;
 
     @Column(name = "transaction_id", length = 250)
     private String transactionId;

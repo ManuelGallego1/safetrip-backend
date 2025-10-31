@@ -1,5 +1,6 @@
 package com.safetrip.backend.domain.repository;
 
+import com.safetrip.backend.domain.model.Policy;
 import com.safetrip.backend.domain.model.PolicyDetail;
 
 import java.util.List;
@@ -15,5 +16,5 @@ public interface PolicyDetailRepository {
 
     void deleteById(Long id);
 
-    List<PolicyDetail> findByPolicyId(Long policyId);
+    Optional<PolicyDetail> findByPolicyId(Policy policy);
 }

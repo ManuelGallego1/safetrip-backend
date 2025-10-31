@@ -2,7 +2,6 @@ package com.safetrip.backend.domain.model;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.List;
 
 public class PolicyType {
 

@@ -13,7 +13,8 @@ public class ProcessMapper {
                 ParameterMapper.toDomain(entity.getParameter()), // mapea el Parameter
                 entity.getDescription(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getUpdatedAt(),
+                entity.getValue()
         );
     }
 
@@ -26,6 +27,7 @@ public class ProcessMapper {
                 .description(domain.getDescription())
                 .createdAt(domain.getCreatedAt())
                 .updatedAt(domain.getUpdatedAt())
+                .value(domain.getValue())
                 .build();
     }
 }
