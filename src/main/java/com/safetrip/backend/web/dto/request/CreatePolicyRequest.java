@@ -1,4 +1,4 @@
-package com.safetrip.backend.web.dto.request;
+package com.safetrip.backend.application.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,7 +7,9 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class CreatePolicyRequest {
-    private String policyType;
-    private List<PersonRequest> persons;
+public class CreatePolicyDTO {
+    private Long policyTypeId;
+    private Integer personCount;
+    private Long createdByUserId;
+    private List<PersonDTO> persons;
 }
