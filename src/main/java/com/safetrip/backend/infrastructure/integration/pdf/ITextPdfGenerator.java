@@ -10,17 +10,23 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.StampingProperties;
+import com.itextpdf.kernel.utils.PdfMerger;
 import com.safetrip.backend.domain.service.PdfGeneratorService;
 import com.safetrip.backend.infrastructure.integration.pdf.config.PdfConfig;
-import com.safetrip.backend.infrastructure.integration.pdf.dto.PolicyPdfData;
+import com.safetrip.backend.infrastructure.integration.pdf.dto.Template01ApData;
+import com.safetrip.backend.infrastructure.integration.pdf.dto.Template02ApData;
+import com.safetrip.backend.infrastructure.integration.pdf.mapper.Template02ApMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
+import java.awt.*;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -29,9 +35,7 @@ import java.util.Map;
 public class ITextPdfGenerator implements PdfGeneratorService {
 
     private final PdfConfig pdfConfig;
-
-    // Color blanco
-    private static final DeviceRgb WHITE_COLOR = new DeviceRgb(255, 255, 255);
+    private final Template02ApMapper template02ApMapper;
 
     // Cachear los bytes de las fuentes, NO las instancias de PdfFont
     private byte[] openSansFontBytes;
@@ -68,18 +72,18 @@ public class ITextPdfGenerator implements PdfGeneratorService {
     }
 
     @Override
-    public byte[] generatePolicyPdf(PolicyPdfData data) {
+    public byte[] generateTemplate01Pdf(Template01ApData data) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            generatePolicyPdf(data, baos);
+            generateTemplate01Pdf(data, baos);
             return baos.toByteArray();
         } catch (IOException e) {
-            log.error("Error generating policy PDF", e);
-            throw new RuntimeException("Failed to generate policy PDF", e);
+            log.error("Error generating Template01 PDF", e);
+            throw new RuntimeException("Failed to generate Template01 PDF", e);
         }
     }
 
     @Override
-    public void generatePolicyPdf(PolicyPdfData data, OutputStream outputStream) {
+    public void generateTemplate01Pdf(Template01ApData data, OutputStream outputStream) {
         PdfDocument pdfDoc = null;
         try {
             // Crear nuevas instancias de fuente para CADA PDF
@@ -87,7 +91,7 @@ public class ITextPdfGenerator implements PdfGeneratorService {
             PdfFont openSansBoldFont = createOpenSansBoldFont();
 
             // Usar PdfDocument con stamping mode para modificar el PDF existente
-            PdfReader reader = new PdfReader(pdfConfig.getPolicyTemplateResource().getInputStream());
+            PdfReader reader = new PdfReader(pdfConfig.getTemplate01Resource().getInputStream());
             PdfWriter writer = new PdfWriter(outputStream);
 
             // Usar StampingProperties para modo de modificación
@@ -104,12 +108,12 @@ public class ITextPdfGenerator implements PdfGeneratorService {
             form.setGenerateAppearance(true);
 
             // Llenar los campos del formulario
-            fillFormFields(form, data, openSansFont, openSansBoldFont);
+            fillTemplate01FormFields(form, data, openSansFont, openSansBoldFont);
 
             // Aplanar el formulario DESPUÉS de configurar todo
             form.flattenFields();
 
-            log.info("Policy PDF generated successfully for policy: {}", data.getPolicyNumber());
+            log.info("Template01 PDF generated successfully for policy: {}", data.getNumPoliza());
 
         } catch (IOException e) {
             log.error("Error processing PDF template", e);
@@ -121,50 +125,59 @@ public class ITextPdfGenerator implements PdfGeneratorService {
         }
     }
 
-    private void fillFormFields(PdfAcroForm form, PolicyPdfData data, PdfFont openSansFont, PdfFont openSansBoldFont) {
+    private void fillTemplate01FormFields(PdfAcroForm form, Template01ApData data,
+                                          PdfFont openSansFont, PdfFont openSansBoldFont) {
         Map<String, PdfFormField> fields = form.getFormFields();
 
         // Log de campos disponibles en el PDF (útil para debugging)
         log.debug("Available form fields: {}", fields.keySet());
 
-        // Policy Number - Bold, 25px, BLANCO
-        setFieldValue(form, "policy_number", data.getPolicyNumber(), openSansBoldFont, 24f, WHITE_COLOR);
+        // Número de póliza
+        setFieldValue(form, "numPoliza", data.getNumPoliza(), openSansBoldFont, 20f, new DeviceRgb(Color.WHITE) , PdfFormField.ALIGN_CENTER);
+        setFieldValue(form, "numPoliza2", data.getNumPoliza(), openSansFont, 20f, null, PdfFormField.ALIGN_LEFT);
 
-        // Collective Policy - Pequeño, 8px, BLANCO
-        setFieldValue(form, "collective_policy", data.getCollectivePolicy(), openSansFont, 8f, WHITE_COLOR);
+        // Datos del tomador
+        setFieldValue(form, "nomTomador", data.getNomTomador(), openSansBoldFont, 20f, new DeviceRgb(Color.WHITE) , PdfFormField.ALIGN_CENTER);
+        setFieldValue(form, "nomTomador2", data.getNomTomador(), openSansFont, 20f,  null, PdfFormField.ALIGN_LEFT);
+        setFieldValue(form, "dir", data.getDir(), openSansFont, 20f, null, PdfFormField.ALIGN_LEFT);
+        setFieldValue(form, "celular", data.getCelular(), openSansFont, 20f, null, PdfFormField.ALIGN_LEFT);
 
-        // Name Hotel - Bold, 16px, BLANCO
-        setFieldValue(form, "name_hotel", data.getNameHotel(), openSansBoldFont, 20f, WHITE_COLOR);
+        // Tipo de documento - BOLD
+        setFieldValue(form, "tipoDoc", data.getTipoDoc(), openSansBoldFont, 24f,  null, PdfFormField.ALIGN_LEFT);
+        setFieldValue(form, "numDoc", data.getNumDoc(), openSansFont, 20f,  null, PdfFormField.ALIGN_LEFT);
 
-        // Campos normales - 16px, sin color (negro por defecto)
-        setFieldValue(form, "name_hotel2", data.getNameHotel2(), openSansFont, 20f, null);
-        setFieldValue(form, "nit", data.getNit(), openSansFont, 20f, null);
-        setFieldValue(form, "phone_number", data.getPhoneNumber(), openSansFont, 20f, null);
-        setFieldValue(form, "address", data.getAddress(), openSansFont, 20f, null);
-        setFieldValue(form, "person_count", data.getPersonCount(), openSansFont, 20f, null);
+        // Número de asegurados
+        setFieldValue(form, "numAsegurados", data.getNumAsegurados(), openSansFont, 20f, new DeviceRgb(255, 67, 103), PdfFormField.ALIGN_CENTER);
 
-        // Fecha y hora de expedición - 16px (hora formateada)
-        setFieldValue(form, "hour", formatHour(data.getHour()), openSansFont, 16f, null);
-        setFieldValue(form, "day", data.getDay(), openSansFont, 16f, null);
-        setFieldValue(form, "month", data.getMonth(), openSansFont, 16f, null);
-        setFieldValue(form, "year", data.getYear(), openSansFont, 16f, null);
+        // Fecha de expedición
+        setFieldValue(form, "hExp", formatHour(data.getHExp()), openSansFont, 16f, null, PdfFormField.ALIGN_CENTER);
+        setFieldValue(form, "diaExp", data.getDiaExp(), openSansFont, 16f,null, PdfFormField.ALIGN_CENTER);
+        setFieldValue(form, "mesExp", data.getMesExp(), openSansFont, 16f,null, PdfFormField.ALIGN_CENTER);
+        setFieldValue(form, "anExp", data.getAnExp(), openSansFont, 16f,null, PdfFormField.ALIGN_CENTER);
 
-        // Fecha desde - 16px (hora formateada)
-        setFieldValue(form, "hour_from", formatHour(data.getHourFrom()), openSansFont, 16f, null);
-        setFieldValue(form, "day_from", data.getDayFrom(), openSansFont, 16f, null);
-        setFieldValue(form, "month_from", data.getMonthFrom(), openSansFont, 16f, null);
-        setFieldValue(form, "year_from", data.getYearFrom(), openSansFont, 16f, null);
+        // Fecha desde
+        setFieldValue(form, "hDesde", formatHour(data.getHDesde()), openSansFont, 16f,null, PdfFormField.ALIGN_CENTER);
+        setFieldValue(form, "diaDesde", data.getDiaDesde(), openSansFont, 16f, new DeviceRgb(255, 67, 103), PdfFormField.ALIGN_CENTER);
+        setFieldValue(form, "mesDesde", data.getMesDesde(), openSansFont, 16f,new DeviceRgb(255, 67, 103), PdfFormField.ALIGN_CENTER);
+        setFieldValue(form, "anDesde", data.getAnDesde(), openSansFont, 16f,null, PdfFormField.ALIGN_CENTER);
 
-        // Fecha hasta - 16px
-        setFieldValue(form, "day_to", data.getDayTo(), openSansFont, 16f, null);
-        setFieldValue(form, "month_to", data.getMonthTo(), openSansFont, 16f, null);
-        setFieldValue(form, "year_to", data.getYearTo(), openSansFont, 16f, null);
+        // Fecha hasta
+        setFieldValue(form, "diaHasta", data.getDiaHasta(), openSansFont, 16f,new DeviceRgb(255, 67, 103), PdfFormField.ALIGN_CENTER);
+        setFieldValue(form, "mesHasta", data.getMesHasta(), openSansFont, 16f,new DeviceRgb(255, 67, 103), PdfFormField.ALIGN_CENTER);
+        setFieldValue(form, "anHasta", data.getAnHasta(), openSansFont, 16f,null, PdfFormField.ALIGN_CENTER);
 
-        // Value Policy - 16px
-        setFieldValue(form, "value_policy", data.getValuePolicy(), openSansFont, 18f, null);
+        // Valor de la póliza
+        setFieldValue(form, "valor", data.getValor(), openSansBoldFont, 24f, new DeviceRgb(255, 67, 103), PdfFormField.ALIGN_CENTER);
+
+        // Teléfono de emergencias
+        setFieldValue(form, "telEmer", data.getTelEmer(), openSansBoldFont, 32f, null, PdfFormField.ALIGN_CENTER);
     }
 
-    private void setFieldValue(PdfAcroForm form, String fieldName, Object value, PdfFont font, float fontSize, DeviceRgb color) {
+    /**
+     * Método completo para setear valores con color y alineación personalizados
+     */
+    private void setFieldValue(PdfAcroForm form, String fieldName, Object value,
+                               PdfFont font, float fontSize, DeviceRgb color, int alignment) {
         if (value == null) {
             return;
         }
@@ -172,23 +185,26 @@ public class ITextPdfGenerator implements PdfGeneratorService {
         try {
             PdfFormField field = form.getField(fieldName);
             if (field != null) {
-                // Primero configurar fuente y color
+                // Configurar fuente y tamaño
                 field.setFont(font);
                 field.setFontSize(fontSize);
 
-                // Aplicar color si se especifica
+                // Configurar color si se especifica
                 if (color != null) {
                     field.setColor(color);
                 }
 
-                // Luego establecer el valor
+                // Configurar alineación
+                field.setJustification(alignment);
+
+                // Establecer el valor
                 field.setValue(String.valueOf(value));
 
                 // Regenerar apariencia
                 field.regenerateField();
 
-                log.debug("Set field '{}' to value '{}' with font size {} and color {}",
-                        fieldName, value, fontSize, color != null ? "white" : "default");
+                log.debug("Set field '{}' to value '{}' with font size {}, alignment {}",
+                        fieldName, value, fontSize, alignment);
             } else {
                 log.warn("Form field '{}' not found in PDF template", fieldName);
             }
@@ -199,12 +215,161 @@ public class ITextPdfGenerator implements PdfGeneratorService {
 
     /**
      * Formatea la hora al formato HH:mm (24 horas)
-     * Ejemplo: 9 -> "09:00", 15 -> "15:00"
+     * Ejemplo: "9" -> "09:00", "15" -> "15:00"
      */
-    private String formatHour(Integer hour) {
-        if (hour == null) {
+    private String formatHour(String hour) {
+        if (hour == null || hour.trim().isEmpty()) {
             return null;
         }
-        return String.format("%02d:00", hour);
+        try {
+            int hourInt = Integer.parseInt(hour.trim());
+            return String.format("%02d:00", hourInt);
+        } catch (NumberFormatException e) {
+            log.warn("Invalid hour format: {}", hour);
+            return hour; // Retornar el valor original si no se puede parsear
+        }
+    }
+
+    // ==================== MÉTODOS PARA TEMPLATE02AP ====================
+
+    @Override
+    public void generateTemplate02Pdf(Template02ApData.PageData pageData, OutputStream outputStream) {
+        PdfDocument pdfDoc = null;
+        try {
+            // Crear fuentes
+            PdfFont openSansFont = createOpenSansFont();
+            PdfFont openSansBoldFont = createOpenSansBoldFont();
+
+            // Leer template02Ap.pdf
+            PdfReader reader = new PdfReader(pdfConfig.getTemplate02Resource().getInputStream());
+            PdfWriter writer = new PdfWriter(outputStream);
+
+            pdfDoc = new PdfDocument(reader, writer, new StampingProperties());
+
+            PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, false);
+
+            if (form == null) {
+                log.error("No form fields found in Template02 PDF");
+                throw new RuntimeException("Template02 PDF does not contain form fields");
+            }
+
+            form.setGenerateAppearance(true);
+
+            // Llenar campos del formulario
+            fillTemplate02FormFields(form, pageData, openSansFont, openSansBoldFont);
+
+            // Aplanar formulario
+            form.flattenFields();
+
+            log.info("Template02 PDF generated successfully - Page {}/{}",
+                    pageData.getPageNumber(), pageData.getTotalPages());
+
+        } catch (IOException e) {
+            log.error("Error processing Template02 PDF", e);
+            throw new RuntimeException("Failed to process Template02 PDF", e);
+        } finally {
+            if (pdfDoc != null) {
+                pdfDoc.close();
+            }
+        }
+    }
+
+    private void fillTemplate02FormFields(PdfAcroForm form, Template02ApData.PageData pageData,
+                                          PdfFont openSansFont, PdfFont openSansBoldFont) {
+        Map<String, PdfFormField> fields = form.getFormFields();
+
+        log.debug("Available form fields in Template02: {}", fields.keySet());
+
+        // Número de póliza con estilo especial (blanco, centrado, bold)
+        setFieldValue(form, "numPoliza", pageData.getNumPoliza(), openSansBoldFont, 20f,
+                new DeviceRgb(255, 255, 255), PdfFormField.ALIGN_CENTER);
+        setFieldValue(form, "numPoliza2", pageData.getNumPoliza(), openSansBoldFont, 16f,
+                new DeviceRgb(255, 255, 255), PdfFormField.ALIGN_LEFT);
+
+        // Valor con estilo especial (rosa/rojo, centrado, bold)
+        setFieldValue(form, "valor", pageData.getValor(), openSansBoldFont, 32f,
+                new DeviceRgb(255, 67, 103), PdfFormField.ALIGN_CENTER);
+
+        // Llenar párrafo de nombres (nom1 contendrá todos los nombres con saltos de línea)
+        List<String> nombres = pageData.getNombres();
+        if (!nombres.isEmpty()) {
+            String nombresTexto = String.join("\n", nombres);
+            setFieldValue(form, "nombres", nombresTexto, openSansFont, 16f, null, PdfFormField.ALIGN_CENTER);
+            log.debug("✅ Párrafo de nombres: {} líneas", nombres.size());
+        }
+
+        // Llenar párrafo de documentos (doc1 contendrá todos los documentos con saltos de línea)
+        List<String> documentos = pageData.getDocumentos();
+        if (!documentos.isEmpty()) {
+            String documentosTexto = String.join("\n", documentos);
+            setFieldValue(form, "documentos", documentosTexto, openSansFont, 16f, null, PdfFormField.ALIGN_CENTER);
+            log.debug("✅ Párrafo de documentos: {} líneas", documentos.size());
+        }
+
+        log.debug("✅ Template02 completado con {} asegurados", nombres.size());
+    }
+
+    @Override
+    public byte[] generateCompletePolicyPdf(Template01ApData template01Data, Template02ApData template02Data) {
+        try (ByteArrayOutputStream resultStream = new ByteArrayOutputStream()) {
+
+            log.info("🔄 Generando PDF completo de póliza...");
+
+            // 1. Generar Template01
+            ByteArrayOutputStream template01Stream = new ByteArrayOutputStream();
+            generateTemplate01Pdf(template01Data, template01Stream);
+            byte[] template01Bytes = template01Stream.toByteArray();
+
+            log.debug("✅ Template01 generado: {} bytes", template01Bytes.length);
+
+            // 2. Dividir asegurados en páginas (máximo 20 por página)
+            List<Template02ApData.PageData> pages = template02ApMapper.splitIntoPages(template02Data);
+
+            log.debug("📄 Se generarán {} página(s) de Template02", pages.size());
+
+            // 3. Generar Template02 para cada página
+            List<byte[]> template02BytesList = new java.util.ArrayList<>();
+            for (Template02ApData.PageData page : pages) {
+                ByteArrayOutputStream pageStream = new ByteArrayOutputStream();
+                generateTemplate02Pdf(page, pageStream);
+                template02BytesList.add(pageStream.toByteArray());
+
+                log.debug("✅ Template02 página {}/{} generado: {} bytes",
+                        page.getPageNumber(), page.getTotalPages(), pageStream.size());
+            }
+
+            // 4. Combinar todos los PDFs
+            PdfDocument resultPdf = new PdfDocument(new PdfWriter(resultStream));
+            PdfMerger merger = new PdfMerger(resultPdf);
+
+            // Agregar Template01
+            PdfDocument template01Pdf = new PdfDocument(new PdfReader(new ByteArrayInputStream(template01Bytes)));
+            merger.merge(template01Pdf, 1, template01Pdf.getNumberOfPages());
+            template01Pdf.close();
+
+            log.debug("✅ Template01 añadido al PDF final");
+
+            // Agregar todos los Template02
+            for (int i = 0; i < template02BytesList.size(); i++) {
+                PdfDocument template02Pdf = new PdfDocument(
+                        new PdfReader(new ByteArrayInputStream(template02BytesList.get(i)))
+                );
+                merger.merge(template02Pdf, 1, template02Pdf.getNumberOfPages());
+                template02Pdf.close();
+
+                log.debug("✅ Template02 página {} añadido al PDF final", i + 1);
+            }
+
+            resultPdf.close();
+
+            byte[] finalBytes = resultStream.toByteArray();
+            log.info("🎉 PDF completo generado exitosamente: {} bytes totales", finalBytes.length);
+
+            return finalBytes;
+
+        } catch (IOException e) {
+            log.error("❌ Error generando PDF completo", e);
+            throw new RuntimeException("Failed to generate complete policy PDF", e);
+        }
     }
 }

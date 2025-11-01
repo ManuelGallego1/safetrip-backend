@@ -122,7 +122,12 @@ public class PolicyServiceImpl implements PolicyService {
                         PolicyDetail detail = policyDetailRepository
                                 .findByPolicyId(policy)
                                 .orElseThrow();
-                        return policyResponseMapper.toDtoWithDetails(policy, detail);
+
+                        PolicyPayment payment = policyPaymentRepository
+                                .findByPolicy(policy)
+                                .orElseThrow();
+
+                        return policyResponseMapper.toDtoWithDetails(policy, detail, payment);
                     } catch (Exception ex) {
                         log.error("❌ Error mapeando póliza {}: {}",
                                 policy.getPolicyId(), ex.getMessage());
@@ -617,6 +622,207 @@ public class PolicyServiceImpl implements PolicyService {
         return url;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] downloadPoliciesConsolidatedExcel() {
+        log.info("📊 Generando consolidado de pólizas en Excel");
+
+        User user = getAuthenticatedUser();
+
+        // Obtener todas las pólizas del usuario sin paginación
+        List<Policy> policies = policyRepository.findByCreatedByUserIdOrderByCreatedAtDesc(user.getUserId());
+
+        if (policies.isEmpty()) {
+            log.warn("⚠️ No hay pólizas para exportar");
+            throw new IllegalArgumentException("No tiene pólizas registradas para exportar");
+        }
+
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Consolidado de Pólizas");
+
+            // Estilos
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            CellStyle dataStyle = createDataStyle(workbook);
+            CellStyle dateStyle = createDateStyle(workbook);
+            CellStyle moneyStyle = createMoneyStyle(workbook);
+
+            // Crear encabezado
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {
+                    "Número Póliza",
+                    "Tipo de Póliza",
+                    "Cantidad Personas",
+                    "Precio Unitario",
+                    "Precio Total",
+                    "Origen",
+                    "Destino",
+                    "Fecha Salida",
+                    "Fecha Llegada",
+                    "Fecha Creación",
+                    "Creado con Archivo"
+            };
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Llenar datos
+            int rowNum = 1;
+            for (Policy policy : policies) {
+                try {
+                    Row row = sheet.createRow(rowNum++);
+
+                    // Obtener detalles y pago de la póliza
+                    PolicyDetail detail = policyDetailRepository
+                            .findByPolicyId(policy)
+                            .orElse(null);
+
+                    PolicyPayment payment = policyPaymentRepository
+                            .findByPolicy(policy)
+                            .orElse(null);
+
+
+                    // Número Póliza
+                    createCell(row, 0,
+                            policy.getPolicyNumber() != null ? policy.getPolicyNumber() : "PENDIENTE",
+                            dataStyle);
+
+                    // Tipo de Póliza
+                    String policyTypeName = policy.getPolicyType() != null
+                            ? policy.getPolicyType().getName()
+                            : "N/A";
+                    createCell(row, 1, policyTypeName, dataStyle);
+
+                    // Cantidad Personas
+                    createCell(row, 2, String.valueOf(policy.getPersonCount()), dataStyle);
+
+                    // Precio Total
+                    BigDecimal totalPrice = payment != null && payment.getAppliedAmount() != null
+                            ? payment.getAppliedAmount(): BigDecimal.ZERO;
+                    Cell totalPriceCell = row.createCell(3);
+                    totalPriceCell.setCellValue(totalPrice.doubleValue());
+                    totalPriceCell.setCellStyle(moneyStyle);
+
+                    // Origen
+                    createCell(row, 4, detail != null ? detail.getOrigin() : "N/A", dataStyle);
+
+                    // Destino
+                    createCell(row, 5, detail != null ? detail.getDestination() : "N/A", dataStyle);
+
+                    // Fecha Salida
+                    if (detail != null && detail.getDeparture() != null) {
+                        Cell dateCell = row.createCell(6);
+                        dateCell.setCellValue(java.util.Date.from(detail.getDeparture().toInstant()));
+                        dateCell.setCellStyle(dateStyle);
+                    } else {
+                        createCell(row, 6, "N/A", dataStyle);
+                    }
+
+                    // Fecha Llegada
+                    if (detail != null && detail.getArrival() != null) {
+                        Cell dateCell = row.createCell(7);
+                        dateCell.setCellValue(java.util.Date.from(detail.getArrival().toInstant()));
+                        dateCell.setCellStyle(dateStyle);
+                    } else {
+                        createCell(row, 7, "N/A", dataStyle);
+                    }
+
+                    // Fecha Creación
+                    if (policy.getCreatedAt() != null) {
+                        Cell dateCell = row.createCell(8);
+                        dateCell.setCellValue(java.util.Date.from(policy.getCreatedAt().toInstant()));
+                        dateCell.setCellStyle(dateStyle);
+                    } else {
+                        createCell(row, 8, "N/A", dataStyle);
+                    }
+
+                    // Creado con Archivo
+                    createCell(row, 9,
+                            policy.getCreatedWithFile() != null && policy.getCreatedWithFile() ? "SÍ" : "NO",
+                            dataStyle);
+
+                } catch (Exception ex) {
+                    log.error("❌ Error procesando póliza {}: {}",
+                            policy.getPolicyId(), ex.getMessage());
+                }
+            }
+
+            // Ajustar ancho de columnas
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+                // Agregar un poco de padding extra
+                sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 500);
+            }
+
+            // Convertir a bytes
+            java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
+            workbook.write(outputStream);
+
+            log.info("✅ Excel generado exitosamente con {} pólizas", policies.size());
+
+            return outputStream.toByteArray();
+
+        } catch (IOException ex) {
+            log.error("❌ Error generando Excel: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Error al generar el archivo Excel", ex);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<InsuredPersonResponse>> getInsuredPersonsByPolicy(Long policyId) {
+        log.info("🔍 Obteniendo asegurados de la póliza: {}", policyId);
+
+        // Verificar que la póliza existe
+        Policy policy = policyRepository.findById(policyId)
+                .orElseThrow(() -> {
+                    log.error("❌ Póliza no encontrada: {}", policyId);
+                    return new IllegalArgumentException("Póliza no encontrada con ID: " + policyId);
+                });
+
+        // Verificar que el usuario autenticado es el dueño de la póliza
+        User currentUser = getAuthenticatedUser();
+        if (!policy.getCreatedByUser().getUserId().equals(currentUser.getUserId())) {
+            log.error("❌ Usuario no autorizado para ver los asegurados de la póliza: {}", policyId);
+            throw new SecurityException("No tiene permisos para ver los asegurados de esta póliza");
+        }
+
+        // Obtener las relaciones póliza-persona
+        List<PolicyPerson> policyPersons = policyPersonRepository.findByPolicyId(policyId);
+
+        if (policyPersons.isEmpty()) {
+            log.info("📭 No se encontraron asegurados para la póliza: {}", policyId);
+            return ApiResponse.success(
+                    "No se encontraron asegurados para esta póliza",
+                    List.of()
+            );
+        }
+
+        // Mapear a DTOs
+        List<InsuredPersonResponse> insuredPersons = policyPersons.stream()
+                .map(pp -> {
+                    Person person = pp.getPerson();
+                    return new InsuredPersonResponse(
+                            person.getPersonId(),
+                            person.getFullName(),
+                            person.getDocumentType(),
+                            person.getDocumentNumber(),
+                            pp.getRelationship(),
+                            pp.getCreatedAt()
+                    );
+                })
+                .collect(Collectors.toList());
+
+        log.info("✅ {} asegurados encontrados para la póliza {}", insuredPersons.size(), policyId);
+
+        return ApiResponse.success(
+                String.format("Se encontraron %d asegurados", insuredPersons.size()),
+                insuredPersons
+        );
+    }
+
     /**
      * Obtiene el usuario autenticado
      */
@@ -661,5 +867,53 @@ public class PolicyServiceImpl implements PolicyService {
             }
         }
         return true;
+    }
+
+    private CellStyle createHeaderStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        font.setFontHeightInPoints((short) 11);
+        font.setColor(IndexedColors.WHITE.getIndex());
+        style.setFont(font);
+        style.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        return style;
+    }
+
+    private CellStyle createDataStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        return style;
+    }
+
+    private CellStyle createDateStyle(Workbook workbook) {
+        CellStyle style = createDataStyle(workbook);
+        CreationHelper createHelper = workbook.getCreationHelper();
+        style.setDataFormat(createHelper.createDataFormat().getFormat("dd/MM/yyyy HH:mm"));
+        return style;
+    }
+
+    private CellStyle createMoneyStyle(Workbook workbook) {
+        CellStyle style = createDataStyle(workbook);
+        CreationHelper createHelper = workbook.getCreationHelper();
+        style.setDataFormat(createHelper.createDataFormat().getFormat("$#,##0.00"));
+        return style;
+    }
+
+    private void createCell(Row row, int column, String value, CellStyle style) {
+        Cell cell = row.createCell(column);
+        cell.setCellValue(value != null ? value : "");
+        cell.setCellStyle(style);
     }
 }

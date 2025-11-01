@@ -25,5 +25,5 @@ public class PolicyResponseWithDetails {
     private ZonedDateTime arrival;
 
     //detalles de pago
-    private BigDecimal unitPrice;
+    private BigDecimal amount;
 }

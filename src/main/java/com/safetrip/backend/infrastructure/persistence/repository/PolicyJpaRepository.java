@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -28,6 +29,8 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
             @Param("userId") Long userId,
             Pageable pageable
     );
+
+    List<PolicyEntity> findByCreatedByUserUserIdOrderByCreatedAtDesc(Long userId);
 
     @Modifying
     @Query("UPDATE PolicyEntity p SET " +

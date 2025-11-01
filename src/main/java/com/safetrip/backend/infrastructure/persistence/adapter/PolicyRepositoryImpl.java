@@ -73,6 +73,16 @@ public class PolicyRepositoryImpl implements PolicyRepository {
     }
 
     @Override
+    public List<Policy> findByCreatedByUserIdOrderByCreatedAtDesc(Long userId) {
+        List<PolicyEntity> entitiesList = policyJpaRepository
+                .findByCreatedByUserUserIdOrderByCreatedAtDesc(userId);
+
+        return entitiesList.stream()
+                .map(PolicyMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public int patchPolicy(Long policyId, String policyNumber, ZonedDateTime updatedAt, BigDecimal unitPrice, Integer personCount) {
         ZonedDateTime actualUpdatedAt = updatedAt != null ? updatedAt : ZonedDateTime.now();

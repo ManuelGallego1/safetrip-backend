@@ -3,6 +3,7 @@ package com.safetrip.backend.application.service;
 import com.safetrip.backend.web.dto.request.CreatePolicyRequest;
 import com.safetrip.backend.web.dto.response.ApiResponse;
 import com.safetrip.backend.web.dto.response.CreatePolicyResponse;
+import com.safetrip.backend.web.dto.response.InsuredPersonResponse;
 import com.safetrip.backend.web.dto.response.PolicyResponseWithDetails;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,4 +30,14 @@ public interface PolicyService {
      * Actualiza información básica de una póliza
      */
     int patchPolicy(Long policyId, String policyNumber, BigDecimal unitPrice, Integer personCount);
+
+    /**
+     * Genera un archivo Excel con el consolidado de todas las pólizas del usuario autenticado
+     */
+    byte[] downloadPoliciesConsolidatedExcel();
+
+    /**
+     * Obtiene todos los asegurados de una póliza específica
+     */
+    ApiResponse<List<InsuredPersonResponse>> getInsuredPersonsByPolicy(Long policyId);
 }

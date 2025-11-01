@@ -2,6 +2,7 @@ package com.safetrip.backend.web.dto.mapper;
 
 import com.safetrip.backend.domain.model.Policy;
 import com.safetrip.backend.domain.model.PolicyDetail;
+import com.safetrip.backend.domain.model.PolicyPayment;
 import com.safetrip.backend.domain.model.PolicyType;
 import com.safetrip.backend.web.dto.response.PolicyResponse;
 import com.safetrip.backend.web.dto.response.PolicyResponseWithDetails;
@@ -62,7 +63,7 @@ public class PolicyResponseMapper {
     /**
      * Convierte una entidad Policy a PolicyResponseWithDetails (incluye detalles).
      */
-    public PolicyResponseWithDetails toDtoWithDetails(Policy policy, PolicyDetail policyDetail) {
+    public PolicyResponseWithDetails toDtoWithDetails(Policy policy, PolicyDetail policyDetail, PolicyPayment payment) {
         if (policy == null) {
             log.warn("⚠️ Attempted to map null policy with details");
             return null;
@@ -89,7 +90,7 @@ public class PolicyResponseMapper {
                     policyDetail != null ? policyDetail.getDestination() : null,
                     policyDetail != null ? policyDetail.getArrival() : null,
                     policyDetail != null ? policyDetail.getDeparture() : null,
-                    baseResponse.getUnitPrice()
+                    payment.getAppliedAmount()
             );
 
             log.trace("  ✅ Successfully mapped policy with details - ID: {}", policy.getPolicyId());

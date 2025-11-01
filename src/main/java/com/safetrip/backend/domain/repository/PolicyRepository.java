@@ -25,5 +25,7 @@ public interface PolicyRepository {
 
     Page<Policy> findByCreatedByUserIdOrderByCreatedAtDesc(Long userId, PageRequest pageRequest);
 
+    List<Policy> findByCreatedByUserIdOrderByCreatedAtDesc(Long userId);
+
     int patchPolicy (Long policyId, String policyNumber, ZonedDateTime updatedAt, BigDecimal unitPrice, Integer personCount);
 }

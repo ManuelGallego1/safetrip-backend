@@ -4,18 +4,18 @@ import com.safetrip.backend.application.service.PaymentService;
 import com.safetrip.backend.application.service.PolicyService;
 import com.safetrip.backend.web.dto.request.ConfirmPaymentRequest;
 import com.safetrip.backend.web.dto.request.CreatePolicyRequest;
-import com.safetrip.backend.web.dto.response.ApiResponse;
-import com.safetrip.backend.web.dto.response.CreatePolicyResponse;
-import com.safetrip.backend.web.dto.response.PolicyResponse;
-import com.safetrip.backend.web.dto.response.PolicyResponseWithDetails;
+import com.safetrip.backend.web.dto.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -80,5 +80,68 @@ public class PolicyController {
                 policyService.getAllPoliciesForUser(page, size);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/export/excel")
+    public ResponseEntity<byte[]> downloadPoliciesExcel() {
+        log.info("📥 Solicitud de descarga de consolidado de pólizas en Excel");
+
+        try {
+            byte[] excelBytes = policyService.downloadPoliciesConsolidatedExcel();
+
+            // Generar nombre de archivo con fecha actual
+            String filename = String.format("consolidado_polizas_%s.xlsx", LocalDate.now());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDisposition(
+                    ContentDisposition.attachment()
+                            .filename(filename)
+                            .build()
+            );
+            headers.setContentLength(excelBytes.length);
+
+            log.info("✅ Excel descargado exitosamente: {} ({} bytes)", filename, excelBytes.length);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelBytes);
+
+        } catch (IllegalArgumentException ex) {
+            log.warn("⚠️ No hay pólizas para exportar: {}", ex.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception ex) {
+            log.error("❌ Error descargando Excel: {}", ex.getMessage(), ex);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/{policyId}/insured-persons")
+    public ResponseEntity<ApiResponse<List<InsuredPersonResponse>>> getInsuredPersons(
+            @PathVariable Long policyId) {
+
+        log.info("📋 Solicitud de asegurados para la póliza: {}", policyId);
+
+        try {
+            ApiResponse<List<InsuredPersonResponse>> response =
+                    policyService.getInsuredPersonsByPolicy(policyId);
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException ex) {
+            log.warn("⚠️ {}", ex.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(ex.getMessage(), null));
+
+        } catch (SecurityException ex) {
+            log.error("🚫 Acceso denegado: {}", ex.getMessage());
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error("Acceso denegado: " + ex.getMessage(), null));
+
+        } catch (Exception ex) {
+            log.error("❌ Error obteniendo asegurados: {}", ex.getMessage(), ex);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Error interno del servidor", null));
+        }
     }
 }

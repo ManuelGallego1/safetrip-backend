@@ -1,11 +1,14 @@
 package com.safetrip.backend.infrastructure.persistence.adapter;
 
 import com.safetrip.backend.domain.model.Payment;
+import com.safetrip.backend.domain.model.Policy;
 import com.safetrip.backend.domain.model.PolicyPayment;
 import com.safetrip.backend.domain.repository.PolicyPaymentRepository;
 import com.safetrip.backend.infrastructure.persistence.entity.PaymentEntity;
+import com.safetrip.backend.infrastructure.persistence.entity.PolicyEntity;
 import com.safetrip.backend.infrastructure.persistence.entity.PolicyPaymentEntity;
 import com.safetrip.backend.infrastructure.persistence.mapper.PaymentMapper;
+import com.safetrip.backend.infrastructure.persistence.mapper.PolicyMapper;
 import com.safetrip.backend.infrastructure.persistence.mapper.PolicyPaymentMapper;
 import com.safetrip.backend.infrastructure.persistence.repository.PolicyPaymentJpaRepository;
 import org.springframework.stereotype.Component;
@@ -40,6 +43,14 @@ public class PolicyPaymentRepositoryImpl implements PolicyPaymentRepository {
         PaymentEntity entity = PaymentMapper.toEntity(payment);
         // Ahora mapear correctamente de Entity a Domain
         return policyPaymentJpaRepository.findByPayment(entity)
+                .map(PolicyPaymentMapper::toDomain);
+    }
+
+    @Override
+    public Optional<PolicyPayment> findByPolicy(Policy policy) {
+        PolicyEntity entity = PolicyMapper.toEntity(policy);
+        // Ahora mapear correctamente de Entity a Domain
+        return policyPaymentJpaRepository.findByPolicy(entity)
                 .map(PolicyPaymentMapper::toDomain);
     }
 
