@@ -5,6 +5,7 @@ import com.safetrip.backend.application.service.FileAppService;
 import com.safetrip.backend.domain.model.File;
 import com.safetrip.backend.web.dto.response.ApiResponse;
 import com.safetrip.backend.web.dto.response.FileResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/files")
+@SecurityRequirement(name = "bearerAuth")
 public class FileController {
 
     private final FileAppService fileAppService;

@@ -1,5 +1,6 @@
 package com.safetrip.backend.infrastructure.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -40,26 +41,91 @@ public class SecurityConfig {
     @Value("${cors.max-age}")
     private Long maxAge;
 
+    @Value("${springdoc.swagger-ui.enabled:true}")
+    private boolean swaggerEnabled;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ permite preflight
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/health").permitAll()
-                        .requestMatchers("/api/policies/payment-confirmation").permitAll()
-                        .requestMatchers("/api/credentials/**").hasRole("ADMIN")
-                        .requestMatchers("/api/policies/**").hasRole("CUSTOMER")
-                        .requestMatchers("/api/pdf/**").permitAll()
-                        .anyRequest().authenticated()
+                .authorizeHttpRequests(auth -> {
+                    // Permitir preflight
+                    auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+
+                    // Endpoints de autenticación
+                    auth.requestMatchers("/api/auth/**").permitAll();
+                    auth.requestMatchers("/api/health").permitAll();
+
+                    // Página de login de Swagger y recursos estáticos
+                    auth.requestMatchers("/swagger-login.html", "/swagger-auth-injector.js").permitAll();
+                    auth.requestMatchers("/", "/favicon.ico").permitAll();
+                    auth.requestMatchers("/swagger-resources/**", "/webjars/**").permitAll();
+
+                    if (swaggerEnabled) {
+                        auth.requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs.yaml"
+                        ).hasRole("ADMIN");
+                    }
+
+                    // Endpoints de políticas
+                    auth.requestMatchers("/api/policies/payment-confirmation").permitAll();
+                    auth.requestMatchers("/api/policy-plans/**").permitAll();
+                    auth.requestMatchers("/api/policies/config").permitAll();
+                    auth.requestMatchers("/api/policies/**").hasAnyRole("CUSTOMER");
+
+                    // Endpoints de wallet
+                    auth.requestMatchers("/api/wallet-plans/payment-confirmation").permitAll();
+                    auth.requestMatchers("/api/wallet-plans/**").hasRole("CUSTOMER");
+                    auth.requestMatchers("/api/wallet-time-plans/payment-confirmation").permitAll();
+                    auth.requestMatchers("/api/wallet-time-plans/**").hasRole("CUSTOMER");
+                    auth.requestMatchers("/api/wallet-money/payment-confirmation").permitAll();
+                    auth.requestMatchers("/api/wallet-money/**").hasRole("CUSTOMER");
+
+                    // Endpoints administrativos
+                    auth.requestMatchers("/api/credentials/**").hasRole("ADMIN");
+                    auth.requestMatchers("/api/admin/policies").hasAnyRole("SUPPORT", "ADMIN");
+                    auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
+                    auth.requestMatchers("/api/files/**").hasRole("ADMIN");
+                    auth.requestMatchers("/api/pdf/**").permitAll();
+                    auth.requestMatchers("/api/discounts/**").hasRole("ADMIN");
+
+                    // Cualquier otra solicitud requiere autenticación
+                    auth.anyRequest().authenticated();
+                })
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            String requestURI = request.getRequestURI();
+
+                            // Si intenta acceder a Swagger sin auth, redirigir al login
+                            if (requestURI.contains("/swagger-ui") ||
+                                    requestURI.equals("/swagger-ui.html") ||
+                                    requestURI.contains("/v3/api-docs")) {
+                                response.sendRedirect("/swagger-login.html");
+                            } else {
+                                // Para APIs, devolver 401
+                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                response.setContentType("application/json");
+                                response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Token JWT requerido\"}");
+                            }
+                        })
                 )
-                // ✅ muy importante: poner el filtro JWT después del CORS
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                // ⚠️ CRÍTICO: El orden de los filtros importa
+                // 1. Primero convierte la cookie en header
+                .addFilterBefore(cookieToHeaderFilter(), UsernamePasswordAuthenticationFilter.class)
+                // 2. Luego valida el JWT
+                .addFilterAfter(jwtFilter, CookieToHeaderFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CookieToHeaderFilter cookieToHeaderFilter() {
+        return new CookieToHeaderFilter();
     }
 
     @Bean
@@ -86,20 +152,19 @@ public class SecurityConfig {
         paymentConfirmationConfig.setAllowedOriginPatterns(List.of("*"));
         paymentConfirmationConfig.setAllowedMethods(parseCommaSeparated(allowedMethods));
         paymentConfirmationConfig.setAllowedHeaders(List.of("*"));
-        paymentConfirmationConfig.setAllowCredentials(false); // ⚠️ Debe ser false cuando usamos "*"
+        paymentConfirmationConfig.setAllowCredentials(false);
         paymentConfirmationConfig.setMaxAge(maxAge);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/policies/payment-confirmation", paymentConfirmationConfig); // ✅ Específico
-        source.registerCorsConfiguration("/**", defaultConfig); // ✅ Para el resto
+        source.registerCorsConfiguration("/api/policies/payment-confirmation", paymentConfirmationConfig);
+        source.registerCorsConfiguration("/api/wallet-time-plans/payment-confirmation", paymentConfirmationConfig);
+        source.registerCorsConfiguration("/api/wallet-plans/payment-confirmation", paymentConfirmationConfig);
+        source.registerCorsConfiguration("/api/wallet-money/payment-confirmation", paymentConfirmationConfig);
+        source.registerCorsConfiguration("/**", defaultConfig);
 
         return source;
     }
 
-    /**
-     * Parsea una cadena separada por comas en una lista
-     * Ejemplo: "GET,POST,PUT" -> ["GET", "POST", "PUT"]
-     */
     private List<String> parseCommaSeparated(String value) {
         return Arrays.stream(value.split(","))
                 .map(String::trim)

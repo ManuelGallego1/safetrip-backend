@@ -2,9 +2,19 @@ package com.safetrip.backend.web.rest;
 
 import com.safetrip.backend.application.service.PaymentService;
 import com.safetrip.backend.application.service.PolicyService;
+import com.safetrip.backend.domain.model.PolicyType;
+import com.safetrip.backend.domain.repository.PolicyTypeRepository;
 import com.safetrip.backend.web.dto.request.ConfirmPaymentRequest;
 import com.safetrip.backend.web.dto.request.CreatePolicyRequest;
 import com.safetrip.backend.web.dto.response.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ContentDisposition;
@@ -17,24 +27,65 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/policies")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class PolicyController {
 
     private final PolicyService policyService;
     private final PaymentService paymentService;
+    private final PolicyTypeRepository policyTypeRepository;
 
-    /**
-     * Crea una póliza preliminar (manual, Excel o imagen)
-     * El tipo de fuente se detecta automáticamente según los datos recibidos
-     */
+    @GetMapping("/config")
+    public ResponseEntity<com.safetrip.backend.web.dto.response.ApiResponse<List<PolicyConfigResponse>>> getPolicyConfig() {
+        log.info("📋 Obteniendo configuración de tipos de pólizas");
+
+        try {
+            List<PolicyType> policyTypes = policyTypeRepository.findAll();
+
+            List<PolicyConfigResponse> configs = policyTypes.stream()
+                    .map(pt -> PolicyConfigResponse.builder()
+                            .policyTypeId(pt.getPolicyTypeId())
+                            .name(pt.getName())
+                            .baseValue(pt.getBaseValue())
+                            .build())
+                    .collect(Collectors.toList());
+
+            log.info("✅ {} tipos de póliza encontrados", configs.size());
+
+            return ResponseEntity.ok(
+                    com.safetrip.backend.web.dto.response.ApiResponse.success("Configuración obtenida exitosamente", configs)
+            );
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo configuración: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(com.safetrip.backend.web.dto.response.ApiResponse.error("Error al obtener configuración", null));
+        }
+    }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<CreatePolicyResponse>> createPreliminaryPolicy(
+    public ResponseEntity<com.safetrip.backend.web.dto.response.ApiResponse<CreatePolicyResponse>> createPreliminaryPolicy(
+            @Parameter(
+                    description = "Datos de la póliza en formato JSON",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = CreatePolicyRequest.class))
+            )
             @RequestPart("request") CreatePolicyRequest request,
+
+            @Parameter(
+                    description = "Archivo de datos (Excel o imagen) con información de asegurados. Opcional si se envían datos manuales.",
+                    required = false
+            )
             @RequestPart(value = "dataFile", required = false) MultipartFile dataFile,
+
+            @Parameter(
+                    description = "Archivos adjuntos adicionales (documentos, comprobantes, etc.)",
+                    required = false
+            )
             @RequestPart(value = "attachments", required = false) MultipartFile[] attachments
     ) throws IOException {
 
@@ -45,38 +96,58 @@ public class PolicyController {
         );
 
         return ResponseEntity.ok(
-                ApiResponse.success("Póliza preliminar creada exitosamente", response)
+                com.safetrip.backend.web.dto.response.ApiResponse.success("Póliza preliminar creada exitosamente", response)
         );
     }
 
-    /**
-     * Callback de confirmación de pago desde la pasarela
-     */
     @GetMapping("/payment-confirmation")
-    public ResponseEntity<ApiResponse<PolicyResponse>> confirmPayment(
+    public ResponseEntity<com.safetrip.backend.web.dto.response.ApiResponse<PolicyResponse>> confirmPayment(
+            @Parameter(
+                    description = "Número de voucher o identificador único de la transacción",
+                    required = true,
+                    example = "VCH-2024-001234"
+            )
             @RequestParam(required = true) String voucher,
-            @RequestParam(required = true, name = "status_card") String statusCard,
-            @RequestParam(required = false, defaultValue = "N/A") String message) {
 
+            @Parameter(
+                    description = "Estado de la tarjeta/pago retornado por la pasarela",
+                    required = true,
+                    example = "approved"
+            )
+            @RequestParam(required = true, name = "status_card") String statusCard,
+
+            @Parameter(
+                    description = "Mensaje adicional o descripción del estado del pago",
+                    required = false,
+                    example = "Pago aprobado exitosamente"
+            )
+            @RequestParam(required = false, defaultValue = "N/A") String message
+    ) {
         log.info("🔔 Confirmación de pago recibida - Voucher: {}, Status: {}", voucher, statusCard);
 
         ConfirmPaymentRequest request = new ConfirmPaymentRequest(voucher, statusCard, message);
         PolicyResponse response = paymentService.confirmPayment(request);
 
         return ResponseEntity.ok(
-                ApiResponse.success("Pago confirmado exitosamente", response)
+                com.safetrip.backend.web.dto.response.ApiResponse.success("Pago confirmado exitosamente", response)
         );
     }
 
-    /**
-     * Obtiene todas las pólizas del usuario autenticado
-     */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PolicyResponseWithDetails>>> getAllPolicies(
+    public ResponseEntity<com.safetrip.backend.web.dto.response.ApiResponse<List<PolicyResponseWithDetails>>> getAllPolicies(
+            @Parameter(
+                    description = "Número de página (basado en 0)",
+                    example = "0"
+            )
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
 
-        ApiResponse<List<PolicyResponseWithDetails>> response =
+            @Parameter(
+                    description = "Cantidad de elementos por página",
+                    example = "10"
+            )
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        com.safetrip.backend.web.dto.response.ApiResponse<List<PolicyResponseWithDetails>> response =
                 policyService.getAllPoliciesForUser(page, size);
 
         return ResponseEntity.ok(response);
@@ -117,13 +188,18 @@ public class PolicyController {
     }
 
     @GetMapping("/{policyId}/insured-persons")
-    public ResponseEntity<ApiResponse<List<InsuredPersonResponse>>> getInsuredPersons(
-            @PathVariable Long policyId) {
-
+    public ResponseEntity<com.safetrip.backend.web.dto.response.ApiResponse<List<InsuredPersonResponse>>> getInsuredPersons(
+            @Parameter(
+                    description = "ID único de la póliza",
+                    required = true,
+                    example = "123"
+            )
+            @PathVariable Long policyId
+    ) {
         log.info("📋 Solicitud de asegurados para la póliza: {}", policyId);
 
         try {
-            ApiResponse<List<InsuredPersonResponse>> response =
+            com.safetrip.backend.web.dto.response.ApiResponse<List<InsuredPersonResponse>> response =
                     policyService.getInsuredPersonsByPolicy(policyId);
 
             return ResponseEntity.ok(response);
@@ -131,17 +207,17 @@ public class PolicyController {
         } catch (IllegalArgumentException ex) {
             log.warn("⚠️ {}", ex.getMessage());
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(ex.getMessage(), null));
+                    .body(com.safetrip.backend.web.dto.response.ApiResponse.error(ex.getMessage(), null));
 
         } catch (SecurityException ex) {
             log.error("🚫 Acceso denegado: {}", ex.getMessage());
             return ResponseEntity.status(403)
-                    .body(ApiResponse.error("Acceso denegado: " + ex.getMessage(), null));
+                    .body(com.safetrip.backend.web.dto.response.ApiResponse.error("Acceso denegado: " + ex.getMessage(), null));
 
         } catch (Exception ex) {
             log.error("❌ Error obteniendo asegurados: {}", ex.getMessage(), ex);
             return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Error interno del servidor", null));
+                    .body(com.safetrip.backend.web.dto.response.ApiResponse.error("Error interno del servidor", null));
         }
     }
 }

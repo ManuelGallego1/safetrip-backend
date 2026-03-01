@@ -23,8 +23,8 @@ public class PolicyFileRepositoryImpl implements PolicyFileRepository {
     @Override
     public PolicyFile save(PolicyFile policyFile) {
         PolicyFileEntity entity = PolicyFileMapper.toEntity(policyFile);
-        PolicyFileEntity saved = policyFileJpaRepository.save(entity);
-        return PolicyFileMapper.toDomain(saved);
+        PolicyFileEntity savedEntity = policyFileJpaRepository.save(entity);
+        return PolicyFileMapper.toDomain(savedEntity);
     }
 
     @Override
@@ -43,5 +43,12 @@ public class PolicyFileRepositoryImpl implements PolicyFileRepository {
     @Override
     public void delete(Long policyFileId) {
         policyFileJpaRepository.deleteById(policyFileId);
+    }
+
+    @Override
+    public List<PolicyFile> findByPolicyId(Long policyId) {
+        return policyFileJpaRepository.findByPolicyId(policyId).stream()
+                .map(PolicyFileMapper::toDomain)
+                .collect(Collectors.toList());
     }
 }

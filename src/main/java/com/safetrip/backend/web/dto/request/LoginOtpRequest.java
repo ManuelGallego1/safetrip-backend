@@ -7,4 +7,5 @@ import lombok.Data;
 public class LoginOtpRequest {
     String otp;
     String phone;
+    String email;
 }

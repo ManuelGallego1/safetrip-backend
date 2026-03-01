@@ -7,4 +7,8 @@ public interface OtpService {
     Otp generateOtp(User user, int expirationMinutes);
     boolean verifyOtp(User user, String code);
     void cleanupExpiredOtps(User user);
+    long getRemainingLockoutSeconds(Long userId);
+    void recordFailedAttempt(Long userId);
+    void resetFailedAttempts(Long userId);
+    int getRemainingAttempts(Long userId);
 }

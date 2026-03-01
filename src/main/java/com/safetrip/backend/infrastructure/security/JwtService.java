@@ -17,21 +17,21 @@ public class JwtService {
     @Value("${jwt.expirationMs}")
     private long jwtExpirationMs;
 
-    public String generateToken(String phone) {
+    public String generateToken(Long id) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
         Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
 
         return Jwts.builder()
-                .setSubject(phone)
+                .setSubject(id.toString())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String getPhoneFromToken(String token) {
+    public String getIdFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(jwtSecret.getBytes())
                 .build()

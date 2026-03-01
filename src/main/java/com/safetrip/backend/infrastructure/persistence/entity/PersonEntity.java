@@ -55,8 +55,7 @@ public class PersonEntity {
     @Column(name = "updated_at", nullable = false)
     private ZonedDateTime updatedAt;
 
-    // Relationships
-    @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "person", fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
     @Builder.Default
@@ -91,6 +90,8 @@ public class PersonEntity {
                 .documentType(person.getDocumentType())
                 .documentNumber(person.getDocumentNumber())
                 .address(person.getAddress())
+                .createdAt(person.getCreatedAt())
+                .updatedAt(person.getUpdatedAt())
                 .build();
     }
 }

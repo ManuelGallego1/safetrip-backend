@@ -9,4 +9,5 @@ public interface PolicyFileRepository {
     Optional<PolicyFile> findById(Long policyFileId);
     List<PolicyFile> findAll();
     void delete(Long policyFileId);
+    List<PolicyFile> findByPolicyId(Long policyId);
 }

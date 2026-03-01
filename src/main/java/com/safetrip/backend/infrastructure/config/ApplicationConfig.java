@@ -6,6 +6,7 @@ import com.safetrip.backend.application.usecase.VerifyOtpUseCase;
 import com.safetrip.backend.domain.repository.UserRepository;
 import com.safetrip.backend.domain.service.NotificationService;
 import com.safetrip.backend.domain.service.WhatsAppService;
+import com.safetrip.backend.infrastructure.integration.notification.resend.client.EmailClient;
 import com.safetrip.backend.infrastructure.security.JwtService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,9 +18,9 @@ public class ApplicationConfig {
     public SendOtpUseCase sendOtpUseCase(
             OtpService otpService,
             WhatsAppService whatsAppService,
-            NotificationService notificationService
+            EmailClient emailClient
     ) {
-        return new SendOtpUseCase(otpService, whatsAppService, notificationService);
+        return new SendOtpUseCase(otpService, whatsAppService, emailClient);
     }
 
     @Bean

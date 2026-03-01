@@ -1,114 +1,172 @@
 package com.safetrip.backend.infrastructure.integration.pdf.mapper;
 
 import com.safetrip.backend.domain.model.*;
+import com.safetrip.backend.infrastructure.integration.notification.resend.dto.EmailAttachment;
 import com.safetrip.backend.infrastructure.integration.pdf.dto.Template02ApData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
-@Component
 @Slf4j
+@Component
 public class Template02ApMapper {
 
-    /**
-     * Mapea los datos de la póliza y sus asegurados al DTO para generar el PDF Template02
-     */
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     public Template02ApData toTemplate02ApData(
             Policy policy,
+            PolicyDetail policyDetail,
             PolicyPayment policyPayment,
-            List<PolicyPerson> policyPersons) {
+            List<PolicyPerson> policyPersons,
+            List<EmailAttachment> attachments) {
 
-        log.debug("Mapeando datos para Template02Ap - Póliza: {} con {} asegurados",
-                policy.getPolicyId(), policyPersons.size());
+        boolean hasAttachments = attachments != null && !attachments.isEmpty();
+        boolean hasPersons = policyPersons != null && !policyPersons.isEmpty();
 
-        // Calcular valor total
-        BigDecimal totalValue = policyPayment != null && policyPayment.getAppliedAmount() != null
-                ? policyPayment.getAppliedAmount()
-                : BigDecimal.ZERO;
+        log.debug("📊 Mapeando Template02ApData para póliza {}: archivos={}, personas={}",
+                policy.getPolicyId(), hasAttachments, hasPersons);
 
-        String formattedValue = formatMoney(totalValue);
-
-        // Extraer nombres y documentos de todos los asegurados
-        List<String> nombres = new ArrayList<>();
-        List<String> documentos = new ArrayList<>();
-
-        for (PolicyPerson pp : policyPersons) {
-            Person person = pp.getPerson();
-
-            // Agregar nombre
-            nombres.add(person.getFullName());
-
-            // Agregar documento (Tipo + Número)
-            String documento = person.getDocumentType().getCode() + " " + person.getDocumentNumber();
-            documentos.add(documento);
+        if (hasAttachments && hasPersons) {
+            log.warn("⚠️ La póliza {} tiene AMBOS archivos y personas. Priorizando modo archivos.",
+                    policy.getPolicyId());
         }
 
-        log.debug("✅ {} nombres y {} documentos extraídos", nombres.size(), documentos.size());
+        String formattedValue = formatMoney(
+                policyPayment != null && policyPayment.getAppliedAmount() != null
+                        ? policyPayment.getAppliedAmount()
+                        : BigDecimal.ZERO
+        );
+
+        String policyNumber = policy.getPolicyNumber() != null
+                ? policy.getPolicyNumber()
+                : "PENDIENTE";
+
+        Long tipo = policy.getPolicyType() != null
+                ? policy.getPolicyType().getPolicyTypeId()
+                : null;
+
+        // 🆕 CALCULAR PLAN PARA TIPO 3
+        String plan = null;
+        if (tipo != null && tipo == 3L) {
+            plan = calculatePlanName(policyDetail.getDeparture(), policyDetail.getArrival());
+            log.debug("✅ Plan calculado para tipo 3: {}", plan);
+        }
+
+        if (hasAttachments) {
+            log.info("📎 Modo archivos adjuntos: {} archivo(s) para póliza {}",
+                    attachments.size(), policyNumber);
+
+            return Template02ApData.builder()
+                    .tipo(tipo)
+                    .numPoliza(policyNumber)
+                    .valor(formattedValue)
+                    .plan(plan)
+                    .createdWithFiles(true)
+                    .attachedFiles(attachments)
+                    .nombres(Collections.emptyList())
+                    .documentos(Collections.emptyList())
+                    .fechasDesde(Collections.emptyList())
+                    .fechasHasta(Collections.emptyList())
+                    .build();
+        }
+
+        if (hasPersons) {
+            log.info("👥 Modo lista de asegurados: {} persona(s) para póliza {}",
+                    policyPersons.size(), policyNumber);
+
+            String fechaDesde = policyDetail.getDeparture() != null
+                    ? policyDetail.getDeparture().format(DATE_FORMATTER)
+                    : "N/A";
+
+            String fechaHasta = policyDetail.getArrival() != null
+                    ? policyDetail.getArrival().format(DATE_FORMATTER)
+                    : "N/A";
+
+            List<String> nombres = new ArrayList<>();
+            List<String> documentos = new ArrayList<>();
+            List<String> fechasDesde = new ArrayList<>();
+            List<String> fechasHasta = new ArrayList<>();
+
+            for (int i = 0; i < policyPersons.size(); i++) {
+                PolicyPerson pp = policyPersons.get(i);
+                Person person = pp.getPerson();
+
+                nombres.add(person.getFullName());
+                documentos.add(person.getDocumentType().getCode() + " " + person.getDocumentNumber());
+                fechasDesde.add(fechaDesde);
+                fechasHasta.add(fechaHasta);
+
+                if (i < policyPersons.size() - 1) {
+                    nombres.add("");
+                    documentos.add("");
+                    fechasDesde.add("");
+                    fechasHasta.add("");
+                }
+            }
+
+            return Template02ApData.builder()
+                    .tipo(tipo)
+                    .numPoliza(policyNumber)
+                    .valor(formattedValue)
+                    .plan(plan)
+                    .createdWithFiles(false)
+                    .attachedFiles(Collections.emptyList())
+                    .nombres(nombres)
+                    .documentos(documentos)
+                    .fechasDesde(fechasDesde)
+                    .fechasHasta(fechasHasta)
+                    .build();
+        }
+
+        log.warn("⚠️ La póliza {} no tiene ni archivos ni personas aseguradas", policyNumber);
 
         return Template02ApData.builder()
-                .numPoliza(policy.getPolicyNumber() != null
-                        ? policy.getPolicyNumber()
-                        : "PENDIENTE")
+                .tipo(tipo)
+                .numPoliza(policyNumber)
                 .valor(formattedValue)
-                .nombres(nombres)
-                .documentos(documentos)
+                .plan(plan)
+                .createdWithFiles(false)
+                .attachedFiles(Collections.emptyList())
+                .nombres(Collections.emptyList())
+                .documentos(Collections.emptyList())
+                .fechasDesde(Collections.emptyList())
+                .fechasHasta(Collections.emptyList())
                 .build();
     }
 
-    /**
-     * Divide los datos en páginas de máximo 20 asegurados cada una
-     */
-    public List<Template02ApData.PageData> splitIntoPages(Template02ApData data) {
-        final int MAX_PER_PAGE = 20;
-
-        List<String> allNombres = data.getNombres();
-        List<String> allDocumentos = data.getDocumentos();
-
-        int totalAsegurados = allNombres.size();
-        int totalPages = (int) Math.ceil((double) totalAsegurados / MAX_PER_PAGE);
-
-        log.debug("Dividiendo {} asegurados en {} página(s)", totalAsegurados, totalPages);
-
-        List<Template02ApData.PageData> pages = new ArrayList<>();
-
-        for (int pageNum = 0; pageNum < totalPages; pageNum++) {
-            int fromIndex = pageNum * MAX_PER_PAGE;
-            int toIndex = Math.min(fromIndex + MAX_PER_PAGE, totalAsegurados);
-
-            List<String> pageNombres = allNombres.subList(fromIndex, toIndex);
-            List<String> pageDocumentos = allDocumentos.subList(fromIndex, toIndex);
-
-            Template02ApData.PageData page = Template02ApData.PageData.builder()
-                    .numPoliza(data.getNumPoliza())
-                    .valor(data.getValor())
-                    .nombres(pageNombres)
-                    .documentos(pageDocumentos)
-                    .pageNumber(pageNum + 1)
-                    .totalPages(totalPages)
-                    .build();
-
-            pages.add(page);
-
-            log.debug("Página {}/{}: {} asegurados (índices {}-{})",
-                    pageNum + 1, totalPages, pageNombres.size(), fromIndex, toIndex - 1);
+    private String calculatePlanName(ZonedDateTime startDate, ZonedDateTime endDate) {
+        if (startDate == null || endDate == null) {
+            log.warn("⚠️ Fechas de póliza null, usando plan por defecto");
+            return "Plan No Disponible";
         }
 
-        return pages;
+        long days = ChronoUnit.DAYS.between(startDate.toLocalDate(), endDate.toLocalDate());
+
+        log.debug("📅 Calculando plan: {} días de diferencia", days);
+
+        if (days >= 28 && days <= 32) {
+            return "Plan Mensual";
+        } else if (days >= 180 && days <= 185) {
+            return "Plan Semestral";
+        } else if (days >= 363 && days <= 368) {
+            return "Plan Anual";
+        } else {
+            log.warn("⚠️ Duración no estándar: {} días", days);
+            return "Plan " + days + " días";
+        }
     }
 
-    /**
-     * Formatea un valor monetario con separadores de miles y sin decimales
-     * Ejemplo: 150000 -> "150.000"
-     */
     private String formatMoney(BigDecimal value) {
         if (value == null) {
             return "0";
         }
-
         long longValue = value.longValue();
         return String.format("%,d", longValue).replace(",", ".");
     }

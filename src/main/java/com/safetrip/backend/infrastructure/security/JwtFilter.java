@@ -37,12 +37,12 @@ public class JwtFilter extends OncePerRequestFilter {
             String token = header.substring(7);
 
             if (jwtService.validateToken(token)) {
-                String phone = jwtService.getPhoneFromToken(token);
-                userRepository.findByPhone(phone).ifPresent(user -> {
+                String id = jwtService.getIdFromToken(token);
+                userRepository.findById(Long.parseLong(id)).ifPresent(user -> {
                     String roleName = "ROLE_" + user.getRole().getName().toUpperCase();
                     var authorities = List.of(new SimpleGrantedAuthority(roleName));
 
-                    log.info("Authenticated user: {} with authorities: {}", phone, authorities);
+                    log.info("Authenticated user: {} with authorities: {}", id, authorities);
 
                     var auth = new UsernamePasswordAuthenticationToken(
                             user, null, authorities

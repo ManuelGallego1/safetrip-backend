@@ -2,8 +2,6 @@ package com.safetrip.backend.domain.model;
 
 import com.safetrip.backend.domain.model.enums.DocumentType;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 public class Person {
@@ -30,7 +28,6 @@ public class Person {
         this.address = address;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-
     }
 
     // Getters
@@ -62,56 +59,68 @@ public class Person {
         return updatedAt;
     }
 
-    // Métodos de negocio con validación
+    // Métodos de actualización inmutables que MANTIENEN el ID
     public Person updateFullName(String newFullName) {
         validateFullName(newFullName);
         return new Person(
-                this.personId,
+                this.personId,  // ✅ Mantener ID
                 newFullName,
                 this.documentType,
                 this.documentNumber,
                 this.address,
                 this.createdAt,
-                ZonedDateTime.now(ZoneId.systemDefault())
+                ZonedDateTime.now()  // Actualizar timestamp
         );
     }
 
     public Person updateAddress(String newAddress) {
         validateAddress(newAddress);
         return new Person(
-                this.personId,
+                this.personId,  // ✅ Mantener ID
                 this.fullName,
                 this.documentType,
                 this.documentNumber,
                 newAddress,
                 this.createdAt,
-                ZonedDateTime.now(ZoneId.systemDefault())
+                ZonedDateTime.now()  // Actualizar timestamp
         );
     }
 
     public Person updateDocumentNumber(String newDocumentNumber) {
         validateDocumentNumber(newDocumentNumber);
         return new Person(
-                this.personId,
+                this.personId,  // ✅ Mantener ID
                 this.fullName,
                 this.documentType,
                 newDocumentNumber,
                 this.address,
                 this.createdAt,
-                ZonedDateTime.now(ZoneId.systemDefault())
+                ZonedDateTime.now()  // Actualizar timestamp
         );
     }
 
-    // Validaciones de negocio (invariantes del dominio)
+    public Person updateDocumentType(DocumentType newDocumentType) {
+        if (newDocumentType == null) {
+            throw new IllegalArgumentException("El tipo de documento no puede ser nulo");
+        }
+        return new Person(
+                this.personId,  // ✅ Mantener ID
+                this.fullName,
+                newDocumentType,
+                this.documentNumber,
+                this.address,
+                this.createdAt,
+                ZonedDateTime.now()  // Actualizar timestamp
+        );
+    }
+
+    // Validaciones de invariantes del dominio
     private void validateFullName(String fullName) {
         if (fullName == null || fullName.isBlank()) {
             throw new IllegalArgumentException("El nombre completo no puede estar vacío");
         }
-        if (fullName.length() < 3) {
-            throw new IllegalArgumentException("El nombre completo debe tener al menos 3 caracteres");
-        }
-        if (fullName.length() > 200) {
-            throw new IllegalArgumentException("El nombre completo no puede exceder 200 caracteres");
+        if (fullName.length() > 255) {
+            throw new IllegalArgumentException("El nombre completo no puede exceder 255 caracteres");
         }
     }
 
@@ -128,13 +137,8 @@ public class Person {
         if (documentNumber == null || documentNumber.isBlank()) {
             throw new IllegalArgumentException("El número de documento no puede estar vacío");
         }
-        if (!documentNumber.matches("^[0-9A-Z\\-]+$")) {
-            throw new IllegalArgumentException("El número de documento contiene caracteres inválidos");
+        if (documentNumber.length() > 50) {
+            throw new IllegalArgumentException("El número de documento no puede exceder 50 caracteres");
         }
-    }
-
-    public boolean hasDocument(DocumentType documentType, String documentNumber) {
-        return this.documentType.equals(documentType)
-                && this.documentNumber.equals(documentNumber);
     }
 }

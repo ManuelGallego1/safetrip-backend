@@ -1,9 +1,11 @@
 package com.safetrip.backend.application.service;
 
 import com.safetrip.backend.domain.model.User;
+import com.safetrip.backend.domain.model.enums.NotificationType;
 import com.safetrip.backend.web.dto.request.LoginOtpRequest;
 import com.safetrip.backend.web.dto.request.LoginRequest;
 import com.safetrip.backend.web.dto.request.RegisterRequest;
+import com.safetrip.backend.web.dto.request.ResetPasswordRequest;
 import com.safetrip.backend.web.dto.response.LoginResponse;
 
 public interface AuthService {
@@ -12,4 +14,6 @@ public interface AuthService {
     User registerUser(RegisterRequest registerRequest);
     String sendOtp(String phoneNumber);
     LoginResponse getUserInfo(User user);
+    String sendPasswordResetOtp(String otpSender, NotificationType type);
+    String resetPassword(User user, ResetPasswordRequest request);
 }

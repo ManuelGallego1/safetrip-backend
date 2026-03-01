@@ -7,4 +7,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class SendOtpRequest {
     private String phone;
+    private String email;
 }

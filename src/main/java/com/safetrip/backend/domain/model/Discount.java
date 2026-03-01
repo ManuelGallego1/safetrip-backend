@@ -14,7 +14,9 @@ public class Discount {
     private final ZonedDateTime createdAt;
     private final ZonedDateTime updatedAt;
 
-    public Discount(Long discountId, String name, DiscountType type, BigDecimal value, Boolean active, ZonedDateTime createdAt, ZonedDateTime updatedAt) {
+    // Constructor completo
+    public Discount(Long discountId, String name, DiscountType type, BigDecimal value,
+                    Boolean active, ZonedDateTime createdAt, ZonedDateTime updatedAt) {
         this.discountId = discountId;
         this.name = name;
         this.type = type;
@@ -24,6 +26,69 @@ public class Discount {
         this.updatedAt = updatedAt;
     }
 
+    // Constructor para nuevo descuento (sin ID)
+    public static Discount create(String name, DiscountType type, BigDecimal value) {
+        return new Discount(
+                null,
+                name,
+                type,
+                value,
+                true,
+                ZonedDateTime.now(),
+                ZonedDateTime.now()
+        );
+    }
+
+    // Métodos de actualización (inmutables)
+    public Discount updateName(String newName) {
+        return new Discount(
+                this.discountId,
+                newName,
+                this.type,
+                this.value,
+                this.active,
+                this.createdAt,
+                ZonedDateTime.now()
+        );
+    }
+
+    public Discount updateType(DiscountType newType) {
+        return new Discount(
+                this.discountId,
+                this.name,
+                newType,
+                this.value,
+                this.active,
+                this.createdAt,
+                ZonedDateTime.now()
+        );
+    }
+
+    public Discount updateValue(BigDecimal newValue) {
+        return new Discount(
+                this.discountId,
+                this.name,
+                this.type,
+                newValue,
+                this.active,
+                this.createdAt,
+                ZonedDateTime.now()
+        );
+    }
+
+    public Discount updateActive(Boolean newActive) {
+        return new Discount(
+                this.discountId,
+                this.name,
+                this.type,
+                this.value,
+                newActive,
+                this.createdAt,
+                ZonedDateTime.now()
+        );
+    }
+
+    // Getters
     public Long getDiscountId() { return discountId; }
     public String getName() { return name; }
     public DiscountType getType() { return type; }

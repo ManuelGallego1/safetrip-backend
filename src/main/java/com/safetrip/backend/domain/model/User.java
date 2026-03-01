@@ -163,6 +163,21 @@ public class User {
         );
     }
 
+    public User updatePassword(String newPasswordHash) {
+        return new User(
+                this.userId,
+                this.person,
+                this.email,
+                this.phone,
+                newPasswordHash,
+                this.role,
+                this.isActive,
+                this.createdAt,
+                ZonedDateTime.now(),
+                this.profileImageUrl
+        );
+    }
+
     // Validaciones de invariantes del dominio
     private void validateEmail(String email) {
         if (email == null || email.isBlank()) {

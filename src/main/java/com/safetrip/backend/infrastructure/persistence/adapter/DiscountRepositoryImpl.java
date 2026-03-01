@@ -1,53 +1,72 @@
 package com.safetrip.backend.infrastructure.persistence.adapter;
 
 import com.safetrip.backend.domain.model.Discount;
+import com.safetrip.backend.domain.model.enums.DiscountType;
 import com.safetrip.backend.domain.repository.DiscountRepository;
 import com.safetrip.backend.infrastructure.persistence.entity.DiscountEntity;
-import com.safetrip.backend.infrastructure.persistence.mapper.DiscountMapper;
 import com.safetrip.backend.infrastructure.persistence.repository.DiscountJpaRepository;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-@Component
+@Repository
 public class DiscountRepositoryImpl implements DiscountRepository {
 
-    private final DiscountJpaRepository discountJpaRepository;
+    private final DiscountJpaRepository jpaRepository;
 
-    public DiscountRepositoryImpl(DiscountJpaRepository discountJpaRepository) {
-        this.discountJpaRepository = discountJpaRepository;
+    public DiscountRepositoryImpl(DiscountJpaRepository jpaRepository) {
+        this.jpaRepository = jpaRepository;
     }
 
     @Override
     public Discount save(Discount discount) {
-        DiscountEntity entity = DiscountMapper.toEntity(discount);
-        DiscountEntity saved = discountJpaRepository.save(entity);
-        return DiscountMapper.toDomain(saved);
+        DiscountEntity entity = DiscountEntity.fromDomain(discount);
+        DiscountEntity savedEntity = jpaRepository.save(entity);
+        return savedEntity.toDomain();
     }
 
     @Override
-    public Optional<Discount> findById(Long discountId) {
-        return discountJpaRepository.findById(discountId)
-                .map(DiscountMapper::toDomain);
+    public Optional<Discount> findById(Long id) {
+        return jpaRepository.findById(id)
+                .map(DiscountEntity::toDomain);
     }
 
     @Override
     public Optional<Discount> findByName(String name) {
-        return discountJpaRepository.findByName(name)
-                .map(DiscountMapper::toDomain);
+        return jpaRepository.findByName(name)
+                .map(DiscountEntity::toDomain);
     }
 
     @Override
-    public List<Discount> findAll() {
-        return discountJpaRepository.findAll().stream()
-                .map(DiscountMapper::toDomain)
-                .collect(Collectors.toList());
+    public boolean existsByName(String name) {
+        return jpaRepository.existsByName(name);
     }
 
     @Override
-    public void delete(Long discountId) {
-        discountJpaRepository.deleteById(discountId);
+    public boolean existsByNameAndDiscountIdNot(String name, Long discountId) {
+        return jpaRepository.existsByNameAndDiscountIdNot(name, discountId);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Discount> findAllActive() {
+        return jpaRepository.findAllByActiveTrue()
+                .stream()
+                .map(DiscountEntity::toDomain)
+                .toList();
+    }
+
+    // ✅ NUEVO MÉTODO IMPLEMENTADO
+    @Override
+    public List<Discount> findByType(DiscountType type) {
+        return jpaRepository.findByType(type)
+                .stream()
+                .map(DiscountEntity::toDomain)
+                .toList();
     }
 }

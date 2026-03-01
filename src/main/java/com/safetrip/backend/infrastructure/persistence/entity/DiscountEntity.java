@@ -35,7 +35,8 @@ public class DiscountEntity {
     @ToString.Include
     private String name;
 
-    @Column(name = "type", nullable = false, length = 50)
+    @Column(name = "type", nullable = false, length = 150)
+    @Enumerated(EnumType.STRING)
     @ToString.Include
     private DiscountType type; // 'percentage' or 'fixed'
 

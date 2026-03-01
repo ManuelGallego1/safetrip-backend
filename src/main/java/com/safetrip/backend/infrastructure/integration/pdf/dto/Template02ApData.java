@@ -1,5 +1,6 @@
 package com.safetrip.backend.infrastructure.integration.pdf.dto;
 
+import com.safetrip.backend.infrastructure.integration.notification.resend.dto.EmailAttachment;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,29 +9,36 @@ import java.util.List;
 @Data
 @Builder
 public class Template02ApData {
-
-    // Número de póliza
+    private Long tipo;
     private String numPoliza;
-
-    // Valor de la póliza
     private String valor;
+    private List<String> nombres;
+    private List<String> documentos;
+    private List<String> fechasDesde;
+    private List<String> fechasHasta;
+    private String plan;
 
-    // Listas de asegurados
-    private List<String> nombres;      // Lista de nombres completos
-    private List<String> documentos;   // Lista de documentos (tipo + número)
+    // Nuevos campos para soporte de archivos adjuntos
+    private Boolean createdWithFiles;  // Indica si se usará template especial
+    private List<EmailAttachment> attachedFiles; // Lista de archivos a adjuntar al PDF
 
-    /**
-     * Clase interna para representar una página de asegurados
-     * Cada página puede tener hasta 20 asegurados
-     */
     @Data
     @Builder
     public static class PageData {
+        private Long tipo;
         private String numPoliza;
         private String valor;
-        private List<String> nombres;      // Máximo 20
-        private List<String> documentos;   // Máximo 20
-        private int pageNumber;            // Número de página (1, 2, 3...)
-        private int totalPages;            // Total de páginas
+        private List<String> nombres;
+        private List<String> documentos;
+        private List<String> fechasDesde;
+        private List<String> fechasHasta;
+        private int pageNumber;
+        private int totalPages;
+        private String plan;
+
+        private List<Integer> lineasPorNombre;
+
+        // Para el template especial con archivos
+        private Boolean createdWithFiles;
     }
 }

@@ -1,19 +1,18 @@
 package com.safetrip.backend.domain.repository;
 
 import com.safetrip.backend.domain.model.Discount;
+import com.safetrip.backend.domain.model.enums.DiscountType;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface DiscountRepository {
-
     Discount save(Discount discount);
-
-    Optional<Discount> findById(Long discountId);
-
+    Optional<Discount> findById(Long id);
     Optional<Discount> findByName(String name);
-
-    List<Discount> findAll();
-
-    void delete(Long discountId);
+    boolean existsByName(String name);
+    boolean existsByNameAndDiscountIdNot(String name, Long discountId);
+    void deleteById(Long id);
+    List<Discount> findAllActive();
+    List<Discount> findByType(DiscountType type);
 }

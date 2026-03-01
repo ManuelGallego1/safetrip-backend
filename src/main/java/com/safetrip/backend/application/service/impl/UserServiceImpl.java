@@ -38,34 +38,29 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
-        // Actualizar email si viene en el request
-        if (request.getEmail() != null && !request.getEmail().isBlank()) {
-            uniquenessValidator.validateEmailUniqueness(request.getEmail(), userId);
-            user = user.updateEmail(request.getEmail());
-        }
-
-        // Actualizar teléfono si viene en el request
-        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()) {
-            uniquenessValidator.validatePhoneUniqueness(request.getPhoneNumber(), userId);
-            user = user.updatePhone(request.getPhoneNumber());
-        }
-
-        // Actualizar Person si existe y hay cambios
+        // PASO 1: Actualizar Person primero si existe y hay cambios
+        Person updatedPerson = null;
         if (user.getPerson() != null) {
             Person person = user.getPerson();
             boolean personChanged = false;
 
-            if (request.getFullName() != null && !request.getFullName().isBlank()) {
+            // Actualizar nombre si viene y es diferente
+            if (request.getFullName() != null && !request.getFullName().isBlank()
+                    && !request.getFullName().equals(person.getFullName())) {
                 person = person.updateFullName(request.getFullName());
                 personChanged = true;
             }
 
-            if (request.getAddress() != null && !request.getAddress().isBlank()) {
+            // Actualizar dirección si viene y es diferente
+            if (request.getAddress() != null && !request.getAddress().isBlank()
+                    && !request.getAddress().equals(person.getAddress())) {
                 person = person.updateAddress(request.getAddress());
                 personChanged = true;
             }
 
-            if (request.getDocumentNumber() != null && !request.getDocumentNumber().isBlank()) {
+            // Actualizar documento si viene y es diferente
+            if (request.getDocumentNumber() != null && !request.getDocumentNumber().isBlank()
+                    && !request.getDocumentNumber().equals(person.getDocumentNumber())) {
                 uniquenessValidator.validateDocumentUniqueness(
                         person.getDocumentType(),
                         request.getDocumentNumber(),
@@ -75,18 +70,41 @@ public class UserServiceImpl implements UserService {
                 personChanged = true;
             }
 
-            // Solo guardar si hubo cambios
+            // Guardar Person PRIMERO si hubo cambios
             if (personChanged) {
-                person = personRepository.save(person);
-                user = user.updatePerson(person);
+                updatedPerson = personRepository.save(person);
             }
         }
 
-        // Guardar y retornar usuario actualizado
+        // PASO 2: Actualizar campos de User
+        // Si Person cambió, actualizar la referencia
+        if (updatedPerson != null) {
+            user = user.updatePerson(updatedPerson);
+        }
+
+        // Actualizar email si viene y es diferente
+        if (request.getEmail() != null && !request.getEmail().isBlank()
+                && !request.getEmail().equals(user.getEmail())) {
+            uniquenessValidator.validateEmailUniqueness(request.getEmail(), userId);
+            user = user.updateEmail(request.getEmail());
+        }
+
+        // Actualizar teléfono si viene y es diferente
+        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()
+                && !request.getPhoneNumber().equals(user.getPhone())) {
+            uniquenessValidator.validatePhoneUniqueness(request.getPhoneNumber(), userId);
+            user = user.updatePhone(request.getPhoneNumber());
+        }
+
+        // PASO 3: Guardar User al final
         return userRepository.save(user);
     }
 
     private User getAuthenticatedUser() {
-        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof User) {
+            return (User) principal;
+        }
+        throw new UserNotFoundException("Usuario no autenticado o sesión inválida");
     }
 }

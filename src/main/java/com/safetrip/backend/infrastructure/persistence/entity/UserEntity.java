@@ -65,29 +65,34 @@ public class UserEntity {
     @Column(name = "updated_at", nullable = false)
     private ZonedDateTime updatedAt;
 
-    @Column (name = "profile_image_url")
+    @Column(name = "profile_image_url")
     @ToString.Include
     private String profileImageUrl;
 
+    // ✅ OTPs: Mantener cascade ALL - se eliminan con el usuario
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude
     @Builder.Default
     private List<OtpEntity> otps = new ArrayList<>();
 
-    @OneToMany(mappedBy = "createdByUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // ✅ CAMBIO CRÍTICO: Policies NO deben eliminarse al actualizar usuario
+    // Solo mantener PERSIST y MERGE para no romper la creación
+    @OneToMany(mappedBy = "createdByUser", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
     @Builder.Default
     private List<PolicyEntity> createdPolicies = new ArrayList<>();
 
+    // ✅ Wallets: Mantener cascade ALL - se eliminan con el usuario
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude
     @Builder.Default
     private List<WalletEntity> wallets = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // ✅ Payments: Solo PERSIST y MERGE - no eliminar al actualizar usuario
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
     @Builder.Default

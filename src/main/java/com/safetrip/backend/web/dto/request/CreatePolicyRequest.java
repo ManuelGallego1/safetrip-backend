@@ -17,4 +17,5 @@ public class CreatePolicyRequest {
     private ZonedDateTime departure;
     private ZonedDateTime arrival;
     private List<PersonPolicyRequest> persons;
+    private String discount;
 }

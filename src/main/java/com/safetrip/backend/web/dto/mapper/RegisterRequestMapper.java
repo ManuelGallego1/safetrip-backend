@@ -45,10 +45,13 @@ public class RegisterRequestMapper {
 
         Optional<Role> role = roleRepository.findById(2L);
 
+        // 🔹 Normalizar email en minúsculas
+        String normalizedEmail = dto.getEmail() != null ? dto.getEmail().trim().toLowerCase() : null;
+
         return new User(
                 null,
                 person,
-                dto.getEmail(),
+                normalizedEmail,
                 dto.getPhone(),
                 passwordEncoder.encode(dto.getPassword()),
                 role.orElse(null),

@@ -1,6 +1,7 @@
 package com.safetrip.backend.infrastructure.integration.zurich.client;
 
 import com.safetrip.backend.infrastructure.integration.zurich.dto.request.AddOrderPaymentRequest;
+import com.safetrip.backend.infrastructure.integration.zurich.dto.request.CustomPaymentRequest;
 import com.safetrip.backend.infrastructure.integration.zurich.dto.request.LinkCobroRequest;
 import com.safetrip.backend.infrastructure.integration.zurich.dto.request.StatusPaymentRequest;
 import com.safetrip.backend.infrastructure.integration.zurich.dto.response.*;
@@ -50,7 +51,7 @@ public class PaymentOrderClient {
         log.info("🚀 Enviando AddOrderPayment a Zurich: {}", addOrderPaymentRequest);
 
         return client.post()
-                .uri("/api/addOrderPayment")
+                .uri("/api/addOrderPayment/")  // ✅ Added trailing slash
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -84,7 +85,7 @@ public class PaymentOrderClient {
         log.info("🔗 Solicitando LinkCobroVoucher con payload: {}", request);
 
         return client.post()
-                .uri("/api/getLinkCobroVoucher")
+                .uri("/api/getLinkCobroVoucher/")  // ✅ Added trailing slash
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -118,7 +119,7 @@ public class PaymentOrderClient {
         log.info("🔗 Solicitando info pago: {}", request);
 
         return client.post()
-                .uri("/api/getVoucher")
+                .uri("/api/getVoucher/")  // ✅ Added trailing slash
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -138,5 +139,71 @@ public class PaymentOrderClient {
                 .block();
     }
 
+    public CustomStatusPaymentResponse getStatusCustomPayment(String voucher) {
+        ZurichAuthResponse authResponse = paymentAuthClient.authenticate();
+        String token = authResponse.getToken();
+        ZurichIntegrationResponse config = configService.getZurichConfig(zurichConfigId);
 
+        WebClient client = webClient.mutate()
+                .baseUrl(config.getBaseUrl())
+                .build();
+
+        StatusPaymentRequest request = new StatusPaymentRequest(voucher);
+
+        log.info("🔗 Solicitando info pago: {}", request);
+
+        return client.post()
+                .uri("/api/getVoucher/")  // ✅ Added trailing slash
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .body(Mono.just(request), StatusPaymentRequest.class)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is2xxSuccessful()) {
+                        log.info("✅ Zurich respondió 200 OK en getStatusPayment");
+                        return response.bodyToMono(CustomStatusPaymentResponse.class);
+                    } else {
+                        return response.bodyToMono(String.class)
+                                .flatMap(body -> {
+                                    log.error("❌ Zurich getStatusPayment devolvió {} con body:\n{}", response.statusCode(), body);
+                                    return Mono.error(new RuntimeException("Zurich getStatusPayment error: " + response.statusCode() + " - " + body));
+                                });
+                    }
+                })
+                .block();
+    }
+
+    public CustomPaymentResponse customPayment(CustomPaymentRequest customPaymentRequest) {
+        ZurichAuthResponse authResponse = paymentAuthClient.authenticate();
+        String token = authResponse.getToken();
+        ZurichIntegrationResponse config = configService.getZurichConfig(zurichConfigId);
+
+        customPaymentRequest.setResponseUrl(responseUrl);
+
+        WebClient client = webClient.mutate()
+                .baseUrl(config.getBaseUrl())
+                .build();
+
+        log.info("💳 Enviando CustomPayment a Zurich: {}", customPaymentRequest);
+
+        return client.post()
+                .uri("/api/customPayments/")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .body(Mono.just(customPaymentRequest), CustomPaymentRequest.class)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is2xxSuccessful()) {
+                        log.info("✅ Zurich respondió 200 OK en customPayment");
+                        return response.bodyToMono(CustomPaymentResponse.class);
+                    } else {
+                        return response.bodyToMono(String.class)
+                                .flatMap(body -> {
+                                    log.error("❌ Zurich customPayment devolvió {} con body:\n{}", response.statusCode(), body);
+                                    return Mono.error(new RuntimeException("Zurich customPayment error: " + response.statusCode() + " - " + body));
+                                });
+                    }
+                })
+                .block();
+    }
 }

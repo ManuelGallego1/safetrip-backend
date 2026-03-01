@@ -1,7 +1,7 @@
 package com.safetrip.backend.web.rest;
 
-import com.safetrip.backend.application.exception.ParameterNotFoundException;
-import com.safetrip.backend.application.exception.ProcessNotFoundException;
+import com.safetrip.backend.domain.exception.ParameterNotFoundException;
+import com.safetrip.backend.domain.exception.ProcessNotFoundException;
 import com.safetrip.backend.application.service.ParameterService;
 import com.safetrip.backend.application.service.ProcessService;
 import com.safetrip.backend.domain.model.Parameter;
@@ -9,6 +9,7 @@ import com.safetrip.backend.domain.model.Process;
 import com.safetrip.backend.web.dto.request.ParameterRequest;
 import com.safetrip.backend.web.dto.request.ProcessRequest;
 import com.safetrip.backend.web.dto.response.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/credentials")
+@SecurityRequirement(name = "bearerAuth")
 public class CredentialsController {
 
     private final ParameterService parameterService;
