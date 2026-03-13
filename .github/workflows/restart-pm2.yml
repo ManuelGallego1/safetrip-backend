@@ -17,4 +17,5 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           script: |
-            pm2 restart wsp-api-safetrip
+            cd /var/www/wsp-api-safetrip
+            pm2 reload ecosystem.config.js
