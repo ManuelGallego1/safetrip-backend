@@ -17,5 +17,4 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           script: |
-            pm2 stop all
-            pm2 start all
+            pm2 restart all
